@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
   glx_context = glXCreateContext(x11_display, glx_visual, NULL, GL_TRUE);
   glXMakeCurrent(x11_display, x11_window, glx_context);
   
+  log_info("Starting OpenGL version %s", glGetString(GL_VERSION));
   
   // Register WM_DELETE_WINDOW so we can handle the window manager's close request in our message dispatch                           
   Atom wmDeleteMessage = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
