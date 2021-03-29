@@ -31,22 +31,65 @@ int main(int argc, char *argv[])
 
   /* GLX initialization */
   GLint glx_attr[] = {
-      GLX_RGBA,
-      GLX_DOUBLEBUFFER,
-      GLX_DEPTH_SIZE, 24,
-      GLX_STENCIL_SIZE, 8,
-      GLX_RED_SIZE, 8,
-      GLX_GREEN_SIZE, 8,
-      GLX_BLUE_SIZE, 8,
-      GLX_SAMPLE_BUFFERS, 0,
-      GLX_SAMPLES, 0,
+      GLX_X_RENDERABLE    , True,
+      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+      GLX_RED_SIZE        , 8,
+      GLX_GREEN_SIZE      , 8,
+      GLX_BLUE_SIZE       , 8,
+      GLX_ALPHA_SIZE      , 8,
+      GLX_DEPTH_SIZE      , 24,
+      GLX_STENCIL_SIZE    , 8,
+      GLX_DOUBLEBUFFER    , True,
       None
   };
-  XVisualInfo *glx_visual = glXChooseVisual(x11_display, x11_screen_id, glx_attr);
 
+  int fb_candidate_configs_count = 0;
+  GLXFBConfig *candidate_fbs = glXChooseFBConfig(x11_display, x11_screen_id, glx_attr, &fb_candidate_configs_count);
+  if (!fb_candidate_configs_count)
+  {
+      log_err("Unable to find framebuffer candidates for desired config");
+      return 1;
+  }  
+  log_info("Found %d framebuffer candidates", fb_candidate_configs_count);
+
+  int best_fb_index = -1;
+  int best_sample_count = 0;
+
+  for (int i = 0; i < fb_candidate_configs_count; ++i)
+  {
+      XVisualInfo *candidate_info = glXGetVisualFromFBConfig(x11_display, candidate_fbs[i]);
+      if (candidate_info)
+      {
+          int sample_buffers;
+          int samples;
+          glXGetFBConfigAttrib(x11_display, candidate_fbs[i], GLX_SAMPLE_BUFFERS, &sample_buffers);
+          glXGetFBConfigAttrib(x11_display, candidate_fbs[i], GLX_SAMPLES       , &samples);
+
+          if (best_fb_index < 0 || (sample_buffers && samples > best_sample_count))
+          {
+              best_fb_index = i;
+              best_sample_count = samples;
+          }          
+      }
+      XFree(candidate_info);
+  }
+  log_debug("Best visual info index is %d", best_fb_index);
+
+  GLXFBConfig best_fb_candidate = candidate_fbs[best_fb_index];
+  XFree(candidate_fbs);
+
+  XVisualInfo *glx_visual = glXGetVisualFromFBConfig(x11_display, best_fb_candidate);
   if (!glx_visual)
   {
-      log_err("Unable to create GLX virtual");      
+      log_err("Unable to create GLX virtual");
+      return 1;
+  }
+
+  if (x11_screen_id != glx_visual->screen)
+  {
+      log_err("Screen ID %d does not match visual->screen %d", x11_screen_id, glx_visual->screen);
       return 1;
   }
 
@@ -60,6 +103,8 @@ int main(int argc, char *argv[])
   x11_window_set_attr.background_pixel = WhitePixel(x11_display, x11_screen_id);
   x11_window_set_attr.override_redirect = True;
   x11_window_set_attr.colormap = XCreateColormap(x11_display, RootWindow(x11_display, x11_screen_id), glx_visual->visual, AllocNone);
+  x11_window_set_attr.event_mask = KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask;
+  
 
   // NOTE: We can't use XCreateSimpleWindow if we need GLX/OpenGL
   x11_window = XCreateWindow(x11_display,
@@ -75,18 +120,48 @@ int main(int argc, char *argv[])
                              CWBackPixel | CWColormap | CWBorderPixel | CWEventMask,
                              &x11_window_set_attr);
 
-  /* OpenGL context creation */
-  // TODO: Error handling
-  glx_context = glXCreateContext(x11_display, glx_visual, NULL, GL_TRUE);
-  glXMakeCurrent(x11_display, x11_window, glx_context);
-  
-  log_info("Starting OpenGL version %s", glGetString(GL_VERSION));
-  
   // Register WM_DELETE_WINDOW so we can handle the window manager's close request in our message dispatch                           
   Atom wmDeleteMessage = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
   XSetWMProtocols(x11_display, x11_window, &wmDeleteMessage, 1);
-                                   
-  XSelectInput(x11_display, x11_window, KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask);
+
+  /* Create GLX OpenGL context */
+
+  glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+  glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+
+  int context_attr[] = {
+      GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+      GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+      None
+  };
+
+  if (check_for_glx_extension("GLX_ARB_create_context", x11_display, x11_screen_id))
+  {
+      log_info("glXCreateContextAttribsARB is supported");
+      glx_context = glXCreateContextAttribsARB(x11_display, best_fb_candidate, 0, true, context_attr);
+  }
+  else
+  {
+      glx_context = glXCreateNewContext(x11_display, best_fb_candidate, GLX_RGBA_TYPE, 0, True);
+      log_info("glXCreateContextAttribsARB is not supported");
+  }  
+  XSync(x11_display, False);
+  
+  /* glx_context = glXCreateContext(x11_display, glx_visual, NULL, GL_TRUE); */
+  glXMakeCurrent(x11_display, x11_window, glx_context);
+  
+  /* Verify if context is direct */
+  if (glXIsDirect(x11_display, glx_context))
+  {
+      log_info("GLX context is direct");
+  }
+  else
+  {
+      log_info("GLX context is indirect");
+  }
+  
+  log_info("Starting OpenGL version %s", glGetString(GL_VERSION));
 
   // Set title name for our open window
   XStoreName(x11_display, x11_window, "shinage");
@@ -147,10 +222,45 @@ int main(int argc, char *argv[])
 
       // NOTE: This is just for testing that OpenGL actually works
       
+      
   }
 
   /* Cleanup */  
   XDestroyWindow(x11_display, x11_window);
   XCloseDisplay(x11_display);
   return 1;  
+}
+
+/* Check for the presence of an OpenGL extension using a name, like "GL_EXT_bgra".
+   These strings need correct formatting (no spaces).
+   Returns 1 on success, 0 on failure.
+   Edited from https://www.opengl.org/archives/resources/features/OGLextensions/
+*/
+int check_for_glx_extension(char *extension, Display *display, int screen_id)
+{
+    const GLubyte *extensions = NULL;
+    const GLubyte *start;
+    GLubyte *where, *terminator;
+
+    /* Extension names should not have spaces. */
+    where = (GLubyte *) strchr(extension, ' ');
+    if (where || *extension == '\0')
+        return 0;
+    extensions = (const GLubyte *) glXQueryExtensionsString(display, screen_id);
+    log_debug("Extensions found: %s", extensions);
+    /* It takes a bit of care to be fool-proof about parsing the
+       OpenGL extensions string. Don't be fooled by sub-strings,
+       etc. */
+    start = extensions;
+    for (;;) {
+        where = (GLubyte *) strstr((const char *) start, extension);
+        if (!where)
+            break;
+        terminator = where + strlen(extension);
+        if (where == start || *(where - 1) == ' ')
+            if (*terminator == ' ' || *terminator == '\0')
+                return 1;
+        start = terminator;
+    }
+    return 0;
 }

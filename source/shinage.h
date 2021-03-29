@@ -24,7 +24,6 @@ typedef enum {
 } main_loop_state_t;
 
 
-
 char *version = "0.1";
 
 /* X11 globals */
@@ -38,6 +37,13 @@ int x11_window_width = 320;
 int x11_window_height = 200;
 unsigned int x11_window_border_size = 1;
 
+
+/* OpenGL defines */
+// NOTE: This is some magic so we are able to create OpenGL contexts with an exact GL version
+#define GLX_CONTEXT_MAJOR_VERSION_ARB		0x2091
+#define GLX_CONTEXT_MINOR_VERSION_ARB		0x2092
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+
 /* OpenGL globals */
 GLXContext glx_context;
 
@@ -48,5 +54,8 @@ GLXContext glx_context;
 #define log_debug(str, ...) fprintf(stderr, "[DEBUG] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define log_info(str, ...) fprintf(stderr, "[INFO] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
+/* Functions */
+int check_for_glx_extension(char *extension, Display *display, int screen_id);
 
 #endif
