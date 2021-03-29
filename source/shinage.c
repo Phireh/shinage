@@ -50,6 +50,11 @@ int main(int argc, char *argv[])
       return 1;
   }
 
+  GLint major_glx_version, minor_glx_version;
+  glXQueryVersion(x11_display, &major_glx_version, &minor_glx_version);
+  log_info("GLX version %d.%d", major_glx_version, minor_glx_version);
+  
+
   XSetWindowAttributes x11_window_set_attr;
   x11_window_set_attr.border_pixel = BlackPixel(x11_display, x11_screen_id);
   x11_window_set_attr.background_pixel = WhitePixel(x11_display, x11_screen_id);
@@ -69,14 +74,14 @@ int main(int argc, char *argv[])
                              glx_visual->visual,
                              CWBackPixel | CWColormap | CWBorderPixel | CWEventMask,
                              &x11_window_set_attr);
-                             
-                             
-  
-                             
-      
-      
-      
 
+  /* OpenGL context creation */
+  // TODO: Error handling
+  glx_context = glXCreateContext(x11_display, glx_visual, NULL, GL_TRUE);
+  glXMakeCurrent(x11_display, x11_window, glx_context);
+  
+  
+  // Register WM_DELETE_WINDOW so we can handle the window manager's close request in our message dispatch                           
   Atom wmDeleteMessage = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
   XSetWMProtocols(x11_display, x11_window, &wmDeleteMessage, 1);
                                    
@@ -100,6 +105,8 @@ int main(int argc, char *argv[])
   main_loop_state_t main_loop_state = RUNNING;
   while (main_loop_state == RUNNING)
   {
+      /* Event handling */
+      
       // TODO: Sleep so we don't burn the CPU
       XNextEvent(x11_display, &x11_event);
 
@@ -134,6 +141,11 @@ int main(int argc, char *argv[])
           log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
           break;
       }
+
+      /* Rendering */
+
+      // NOTE: This is just for testing that OpenGL actually works
+      
   }
 
   /* Cleanup */  
