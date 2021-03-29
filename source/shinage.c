@@ -29,28 +29,70 @@ int main(int argc, char *argv[])
   x11_screen = DefaultScreenOfDisplay(x11_display);
   x11_screen_id = DefaultScreen(x11_display);
 
-  int x11_window_border_color = BlackPixel(x11_display, x11_screen_id);
-  int x11_window_background_color = WhitePixel(x11_display, x11_screen_id);
-  // TODO: Check return status of this
-  x11_window = XCreateSimpleWindow(x11_display,
-                                   RootWindowOfScreen(x11_screen),
-                                   x11_window_x_coord,
-                                   x11_window_y_coord,
-                                   x11_window_width,
-                                   x11_window_height,
-                                   x11_window_border_size,
-                                   x11_window_border_color,
-                                   x11_window_background_color);
+  /* GLX initialization */
+  GLint glx_attr[] = {
+      GLX_RGBA,
+      GLX_DOUBLEBUFFER,
+      GLX_DEPTH_SIZE, 24,
+      GLX_STENCIL_SIZE, 8,
+      GLX_RED_SIZE, 8,
+      GLX_GREEN_SIZE, 8,
+      GLX_BLUE_SIZE, 8,
+      GLX_SAMPLE_BUFFERS, 0,
+      GLX_SAMPLES, 0,
+      None
+  };
+  XVisualInfo *glx_visual = glXChooseVisual(x11_display, x11_screen_id, glx_attr);
+
+  if (!glx_visual)
+  {
+      log_err("Unable to create GLX virtual");      
+      return 1;
+  }
+
+  XSetWindowAttributes x11_window_set_attr;
+  x11_window_set_attr.border_pixel = BlackPixel(x11_display, x11_screen_id);
+  x11_window_set_attr.background_pixel = WhitePixel(x11_display, x11_screen_id);
+  x11_window_set_attr.override_redirect = True;
+  x11_window_set_attr.colormap = XCreateColormap(x11_display, RootWindow(x11_display, x11_screen_id), glx_visual->visual, AllocNone);
+
+  // NOTE: We can't use XCreateSimpleWindow if we need GLX/OpenGL
+  x11_window = XCreateWindow(x11_display,
+                             RootWindowOfScreen(x11_screen),
+                             x11_window_x_coord,
+                             x11_window_y_coord,
+                             x11_window_width,
+                             x11_window_height,
+                             x11_window_border_size,
+                             glx_visual->depth,
+                             InputOutput,
+                             glx_visual->visual,
+                             CWBackPixel | CWColormap | CWBorderPixel | CWEventMask,
+                             &x11_window_set_attr);
+                             
+                             
+  
+                             
+      
+      
+      
 
   Atom wmDeleteMessage = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
   XSetWMProtocols(x11_display, x11_window, &wmDeleteMessage, 1);
                                    
-  XSelectInput(x11_display, x11_window, KeyPressMask | KeyReleaseMask | KeymapStateMask);
+  XSelectInput(x11_display, x11_window, KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask);
 
-  XStoreName(x11_display, x11_window, "Shinage");
+  // Set title name for our open window
+  XStoreName(x11_display, x11_window, "shinage");
   
   XClearWindow(x11_display, x11_window);
+
+  // Actually show the window
   XMapRaised(x11_display, x11_window);
+
+  // How large is the window
+  XWindowAttributes x11_window_attr;
+  XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
 
   /* Window message loop */
   XEvent x11_event;
@@ -80,10 +122,17 @@ int main(int argc, char *argv[])
       case ClientMessage:
           /* Petition to close window by the window manager. See Xlib's ICCCM docs */
           if (x11_event.xclient.data.l[0] == (long int)wmDeleteMessage)
+          {
               main_loop_state = FINISHED;
+              log_debug("Closing window by window manager's request");
+          }
           break;
-              
-          
+
+      case Expose:
+          /* The window has been resized */
+          XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
+          log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
+          break;
       }
   }
 
