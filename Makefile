@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra -Werror
+CFLAGS=-Wall -Wextra -Werror -g
 LIBS=-lX11 -lGL
 CC=gcc
 SOURCE=source
