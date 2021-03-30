@@ -145,12 +145,12 @@ int main(int argc, char *argv[])
   {
       glx_context = glXCreateNewContext(x11_display, best_fb_candidate, GLX_RGBA_TYPE, 0, True);
       log_info("glXCreateContextAttribsARB is not supported");
-  }  
-  XSync(x11_display, False);
-  
-  /* glx_context = glXCreateContext(x11_display, glx_visual, NULL, GL_TRUE); */
+  }
+  XSync(x11_display, False);  
   glXMakeCurrent(x11_display, x11_window, glx_context);
 
+  /* Get OpenGL function addresses and link manually since we do not use GLEW or similar libs
+     Failing to do this will make us SIGSEGV on GL calls */
   link_gl_functions();
      
   
@@ -184,8 +184,7 @@ int main(int argc, char *argv[])
   main_loop_state_t main_loop_state = RUNNING;
   while (main_loop_state == RUNNING)
   {
-      /* Event handling */
-      
+      /* Event handling */      
       // TODO: Sleep so we don't burn the CPU
       XNextEvent(x11_display, &x11_event);
 
@@ -199,14 +198,6 @@ int main(int argc, char *argv[])
 
       case KeyPress:
           keysym = XLookupKeysym(&x11_event.xkey, 0);
-
-          /* NOTE: XLookupString returns a sequence of ISO-8859-1 characters, which does *not* include things like the Ctrl key.
-             We'll need additional logic to print info about key combinations
-           */
-          //char key_string[128];
-
-          //XLookupString((XKeyPressedEvent*)&x11_event, key_string, 128, NULL, NULL);
-
 
           /* Look for modifier keys */
           unsigned int mod_keys = ((XKeyEvent*)&x11_event)->state;
@@ -230,9 +221,7 @@ int main(int argc, char *argv[])
           case XK_Alt_L:
           case XK_Alt_R:
               set_alt_key();
-              break;              
-              
-
+              break;                            
           }
           break;
 
@@ -290,8 +279,7 @@ int main(int argc, char *argv[])
       glClearColor(1.0f, 0.6f, 1.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT);
       draw_gl_triangle();      
-      glXSwapBuffers(x11_display, x11_window);
-      
+      glXSwapBuffers(x11_display, x11_window);      
   }
 
   /* Cleanup */  
@@ -334,6 +322,7 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
     return 0;
 }
 
+
 void draw_gl_triangle(void)
 {
     float vertices[] = {
@@ -356,7 +345,6 @@ void draw_gl_triangle(void)
     static unsigned int vbo = 0;
     if (!vbo)
         glGenBuffers(1, &vbo);
-
 
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -383,7 +371,7 @@ unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_s
     // print linking errors if any
     int success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if(!success)         // TODO: Maybe better error handling?
+    if (!success)         // TODO: Maybe better error handling?
     {
         glGetProgramInfoLog(program, 512, NULL, infoLog);
         printf("Error: shader linking failed: %s\n", infoLog);
@@ -397,8 +385,6 @@ unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_s
 }
 
 
-
-
 unsigned int build_shader(char *source, int type)
 {
     char infoLog[512];
@@ -407,9 +393,8 @@ unsigned int build_shader(char *source, int type)
     glCompileShader(shader);
     int success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if(!success)
+    if (!success)
     {
-
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
         printf("Error: shader compilation failed: %s\n", infoLog);        
     }
@@ -420,25 +405,24 @@ unsigned int build_shader(char *source, int type)
 int link_gl_functions(void)
 {
     // TODO: Error handling
-    glUseProgram = (PFNGLUSEPROGRAMPROC)glXGetProcAddress((const GLubyte *)"glUseProgram");
-    glGetShaderiv = (PFNGLGETSHADERIVPROC)glXGetProcAddress((const GLubyte *)"glGetShaderiv");
-    glShaderSource = (PFNGLSHADERSOURCEPROC)glXGetProcAddress((const GLubyte *)"glShaderSource");
-    glCompileShader = (PFNGLCOMPILESHADERPROC)glXGetProcAddress((const GLubyte *)"glCompileShader");
-    glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)glXGetProcAddress((const GLubyte *)"glGetShaderInfoLog");
-    glCreateShader = (PFNGLCREATESHADERPROC)glXGetProcAddress((const GLubyte *)"glCreateShader");
-    glCreateProgram = (PFNGLCREATEPROGRAMPROC)glXGetProcAddress((const GLubyte *)"glCreateProgram");
-    glDeleteShader = (PFNGLDELETESHADERPROC)glXGetProcAddress((const GLubyte *)"glDeleteShader");
-    glGetProgramiv = (PFNGLGETPROGRAMIVPROC)glXGetProcAddress((const GLubyte *)"glGetProgramiv");
-    glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)glXGetProcAddress((const GLubyte *)"glGetProgramInfoLog");
-    glAttachShader = (PFNGLATTACHSHADERPROC)glXGetProcAddress((const GLubyte *)"glAttachShader");
-    glLinkProgram = (PFNGLLINKPROGRAMPROC)glXGetProcAddress((const GLubyte *)"glLinkProgram");
-    glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)glXGetProcAddress((const GLubyte *)"glGenVertexArrays");
-    glGenBuffers = (PFNGLGENBUFFERSPROC)glXGetProcAddress((const GLubyte *)"glGenBuffers");
-    glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)glXGetProcAddress((const GLubyte *)"glBindVertexArray");
-    glBindBuffer = (PFNGLBINDBUFFERPROC)glXGetProcAddress((const GLubyte *)"glBindBuffer");
-    
-    glBufferData = (PFNGLBUFFERDATAPROC)glXGetProcAddress((const GLubyte *)"glBufferData");
-    glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)glXGetProcAddress((const GLubyte *)"glVertexAttribPointer");
+    glUseProgram              = (PFNGLUSEPROGRAMPROC)             glXGetProcAddress((const GLubyte *)"glUseProgram");
+    glGetShaderiv             = (PFNGLGETSHADERIVPROC)            glXGetProcAddress((const GLubyte *)"glGetShaderiv");
+    glShaderSource            = (PFNGLSHADERSOURCEPROC)           glXGetProcAddress((const GLubyte *)"glShaderSource");
+    glCompileShader           = (PFNGLCOMPILESHADERPROC)          glXGetProcAddress((const GLubyte *)"glCompileShader");
+    glGetShaderInfoLog        = (PFNGLGETSHADERINFOLOGPROC)       glXGetProcAddress((const GLubyte *)"glGetShaderInfoLog");
+    glCreateShader            = (PFNGLCREATESHADERPROC)           glXGetProcAddress((const GLubyte *)"glCreateShader");
+    glCreateProgram           = (PFNGLCREATEPROGRAMPROC)          glXGetProcAddress((const GLubyte *)"glCreateProgram");
+    glDeleteShader            = (PFNGLDELETESHADERPROC)           glXGetProcAddress((const GLubyte *)"glDeleteShader");
+    glGetProgramiv            = (PFNGLGETPROGRAMIVPROC)           glXGetProcAddress((const GLubyte *)"glGetProgramiv");
+    glGetProgramInfoLog       = (PFNGLGETPROGRAMINFOLOGPROC)      glXGetProcAddress((const GLubyte *)"glGetProgramInfoLog");
+    glAttachShader            = (PFNGLATTACHSHADERPROC)           glXGetProcAddress((const GLubyte *)"glAttachShader");
+    glLinkProgram             = (PFNGLLINKPROGRAMPROC)            glXGetProcAddress((const GLubyte *)"glLinkProgram");
+    glGenVertexArrays         = (PFNGLGENVERTEXARRAYSPROC)        glXGetProcAddress((const GLubyte *)"glGenVertexArrays");
+    glGenBuffers              = (PFNGLGENBUFFERSPROC)             glXGetProcAddress((const GLubyte *)"glGenBuffers");
+    glBindVertexArray         = (PFNGLBINDVERTEXARRAYPROC)        glXGetProcAddress((const GLubyte *)"glBindVertexArray");
+    glBindBuffer              = (PFNGLBINDBUFFERPROC)             glXGetProcAddress((const GLubyte *)"glBindBuffer");    
+    glBufferData              = (PFNGLBUFFERDATAPROC)             glXGetProcAddress((const GLubyte *)"glBufferData");
+    glVertexAttribPointer     = (PFNGLVERTEXATTRIBPOINTERPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribPointer");
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)glXGetProcAddress((const GLubyte *)"glEnableVertexAttribArray");
     
     return 1;

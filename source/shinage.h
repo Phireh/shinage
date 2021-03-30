@@ -55,24 +55,24 @@ unsigned int x11_window_border_size = 1;
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
 /* OpenGL function signatures */
-PFNGLUSEPROGRAMPROC glUseProgram;
-PFNGLGETSHADERIVPROC glGetShaderiv;
-PFNGLSHADERSOURCEPROC glShaderSource;
-PFNGLCOMPILESHADERPROC glCompileShader;
-PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
-PFNGLCREATESHADERPROC glCreateShader;
-PFNGLCREATEPROGRAMPROC glCreateProgram;
-PFNGLDELETESHADERPROC glDeleteShader;
-PFNGLGETPROGRAMIVPROC glGetProgramiv;
-PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
-PFNGLATTACHSHADERPROC glAttachShader;
-PFNGLLINKPROGRAMPROC glLinkProgram;
-PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
-PFNGLGENBUFFERSPROC glGenBuffers;
-PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
-PFNGLBINDBUFFERPROC glBindBuffer;
-PFNGLBUFFERDATAPROC glBufferData;
-PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+PFNGLUSEPROGRAMPROC              glUseProgram;
+PFNGLGETSHADERIVPROC             glGetShaderiv;
+PFNGLSHADERSOURCEPROC            glShaderSource;
+PFNGLCOMPILESHADERPROC           glCompileShader;
+PFNGLGETSHADERINFOLOGPROC        glGetShaderInfoLog;
+PFNGLCREATESHADERPROC            glCreateShader;
+PFNGLCREATEPROGRAMPROC           glCreateProgram;
+PFNGLDELETESHADERPROC            glDeleteShader;
+PFNGLGETPROGRAMIVPROC            glGetProgramiv;
+PFNGLGETPROGRAMINFOLOGPROC       glGetProgramInfoLog;
+PFNGLATTACHSHADERPROC            glAttachShader;
+PFNGLLINKPROGRAMPROC             glLinkProgram;
+PFNGLGENVERTEXARRAYSPROC         glGenVertexArrays;
+PFNGLGENBUFFERSPROC              glGenBuffers;
+PFNGLBINDVERTEXARRAYPROC         glBindVertexArray;
+PFNGLBINDBUFFERPROC              glBindBuffer;
+PFNGLBUFFERDATAPROC              glBufferData;
+PFNGLVERTEXATTRIBPOINTERPROC     glVertexAttribPointer;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 
     
