@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   x11_window_set_attr.background_pixel = WhitePixel(x11_display, x11_screen_id);
   x11_window_set_attr.override_redirect = True;
   x11_window_set_attr.colormap = XCreateColormap(x11_display, RootWindow(x11_display, x11_screen_id), glx_visual->visual, AllocNone);
-  x11_window_set_attr.event_mask = KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask;
+  x11_window_set_attr.event_mask = KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask | ButtonPressMask | ButtonReleaseMask | ButtonMotionMask;
   
 
   // NOTE: We can't use XCreateSimpleWindow if we need GLX/OpenGL
@@ -192,17 +192,80 @@ int main(int argc, char *argv[])
       switch (x11_event.type)
       {
       case KeymapNotify:
+      case MappingNotify:
+          // TODO: Maybe MappingNotify needs more logic?
           XRefreshKeyboardMapping(&x11_event.xmapping);
           break;
 
       case KeyPress:
           keysym = XLookupKeysym(&x11_event.xkey, 0);
+
+          /* NOTE: XLookupString returns a sequence of ISO-8859-1 characters, which does *not* include things like the Ctrl key.
+             We'll need additional logic to print info about key combinations
+           */
+          //char key_string[128];
+
+          //XLookupString((XKeyPressedEvent*)&x11_event, key_string, 128, NULL, NULL);
+
+
+          /* Look for modifier keys */
+          unsigned int mod_keys = ((XKeyEvent*)&x11_event)->state;
+          dispatch_mod_keys(mod_keys);
+          log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+          
           switch (keysym)
           {
           case XK_Escape:
               main_loop_state = FINISHED;
               break;
+
+          case XK_Shift_L:
+          case XK_Shift_R:
+              set_shift_key();
+              break;
+          case XK_Control_L:
+          case XK_Control_R:
+              set_ctrl_key();
+              break;
+          case XK_Alt_L:
+          case XK_Alt_R:
+              set_alt_key();
+              break;              
+              
+
           }
+          break;
+
+      case KeyRelease:
+
+          keysym = XLookupKeysym(&x11_event.xkey, 0);
+          switch (keysym)
+          {
+          case XK_Shift_L:
+          case XK_Shift_R:
+              unset_shift_key();
+              break;
+          case XK_Control_L:
+          case XK_Control_R:
+              unset_ctrl_key();
+              break;
+          case XK_Alt_L:
+          case XK_Alt_R:
+              unset_alt_key();
+              break;                            
+          }
+          break;
+
+      case ButtonPress:
+          // TODO: Handle mouse button presses
+          break;
+
+      case ButtonRelease:
+          // TODO: Handle mouse button releases
+          break;
+
+      case MotionNotify:
+          // TODO: Handle mouse drags
           break;
 
       case ClientMessage:

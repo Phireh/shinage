@@ -16,6 +16,15 @@
 #include <GL/glx.h>
 #include <GL/glext.h>
 
+
+/* Convenience macros */
+// NOTE: ##__VA_ARGS__ is a compiler extension and may not be portable. Maybe check for compiler defs here.
+#define log_err(str, ...) fprintf(stderr, "[ERROR] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define log_debug(str, ...) fprintf(stderr, "[DEBUG] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define log_info(str, ...) fprintf(stderr, "[INFO] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
 /* Types */
 typedef enum {
     PAUSED,
@@ -84,14 +93,56 @@ char *test_fragment_shader =
     "out_color = vec4(1.0, 1.0, 1.0, 1.0);\n" \
     "}";
 
+/* Input handling globals */
+uint8_t modifier_keys = 0;
+char mod_key_str[64];
 
-/* Convenience macros */
-// NOTE: ##__VA_ARGS__ is a compiler extension and may not be portable. Maybe check for compiler defs here.
-#define log_err(str, ...) fprintf(stderr, "[ERROR] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+/* Input handling macros */
+#define CTRL_MOD_KEY (1 << 0)
+#define SHIFT_MOD_KEY (1 << 1)
+#define ALT_MOD_KEY (1 << 2)
 
-#define log_debug(str, ...) fprintf(stderr, "[DEBUG] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+/* Input handling inlines */
+static inline bool  ctrl_key_is_set() { return modifier_keys & CTRL_MOD_KEY;  };
+static inline bool shift_key_is_set() { return modifier_keys & SHIFT_MOD_KEY; };
+static inline bool   alt_key_is_set() { return modifier_keys & ALT_MOD_KEY;   };
 
-#define log_info(str, ...) fprintf(stderr, "[INFO] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+static inline void  set_ctrl_key() { modifier_keys |= CTRL_MOD_KEY;  };
+static inline void set_shift_key() { modifier_keys |= SHIFT_MOD_KEY; };
+static inline void   set_alt_key() { modifier_keys |= ALT_MOD_KEY;   };
+
+static inline void  unset_ctrl_key() { modifier_keys &= !CTRL_MOD_KEY;  };
+static inline void unset_shift_key() { modifier_keys &= !SHIFT_MOD_KEY; };
+static inline void   unset_alt_key() { modifier_keys &= !ALT_MOD_KEY;   };
+
+static inline char *mod_key_str_prefix()
+{
+    char *s = mod_key_str;
+    *s = 0;
+    if (ctrl_key_is_set())
+        s += sprintf(s, "Ctrl + ");
+
+    if (shift_key_is_set())
+        s += sprintf(s, "Shift + ");
+
+    if (alt_key_is_set())
+        s += sprintf(s, "Alt + ");
+
+    return mod_key_str;
+}
+
+static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
+{
+    if (modifier_keys_bitmask & ShiftMask)
+        set_shift_key();
+    if (modifier_keys_bitmask & ControlMask)
+        set_ctrl_key();
+    if (modifier_keys_bitmask & Mod1Mask) // Mod1 is, usually, the Alt key
+        set_alt_key();
+}
+
+
+
 
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
