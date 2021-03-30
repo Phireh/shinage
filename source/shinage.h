@@ -14,6 +14,7 @@
 /* OpenGL related includes:
    requires linking with -lGL */
 #include <GL/glx.h>
+#include <GL/glext.h>
 
 /* Types */
 typedef enum {
@@ -44,8 +45,45 @@ unsigned int x11_window_border_size = 1;
 #define GLX_CONTEXT_MINOR_VERSION_ARB		0x2092
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
+/* OpenGL function signatures */
+PFNGLUSEPROGRAMPROC glUseProgram;
+PFNGLGETSHADERIVPROC glGetShaderiv;
+PFNGLSHADERSOURCEPROC glShaderSource;
+PFNGLCOMPILESHADERPROC glCompileShader;
+PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
+PFNGLCREATESHADERPROC glCreateShader;
+PFNGLCREATEPROGRAMPROC glCreateProgram;
+PFNGLDELETESHADERPROC glDeleteShader;
+PFNGLGETPROGRAMIVPROC glGetProgramiv;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
+PFNGLATTACHSHADERPROC glAttachShader;
+PFNGLLINKPROGRAMPROC glLinkProgram;
+PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
+PFNGLGENBUFFERSPROC glGenBuffers;
+PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
+PFNGLBINDBUFFERPROC glBindBuffer;
+PFNGLBUFFERDATAPROC glBufferData;
+PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+
+    
 /* OpenGL globals */
 GLXContext glx_context;
+
+char *test_vertex_shader =
+    "#version 150\n"      \
+    "in vec2 position;\n" \
+    "void main() {\n" \
+    "gl_Position = vec4(position, 0.0, 1.0);\n" \
+    "}";
+
+char *test_fragment_shader =
+    "#version 150\n" \
+    "out vec4 out_color;\n" \
+    "void main() {\n" \
+    "out_color = vec4(1.0, 1.0, 1.0, 1.0);\n" \
+    "}";
+
 
 /* Convenience macros */
 // NOTE: ##__VA_ARGS__ is a compiler extension and may not be portable. Maybe check for compiler defs here.
@@ -57,5 +95,9 @@ GLXContext glx_context;
 
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
+void draw_gl_triangle(void);
+int link_gl_functions(void);
+unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
+unsigned int build_shader(char *source, int type);
 
 #endif
