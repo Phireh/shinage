@@ -246,7 +246,27 @@ int main(int argc, char *argv[])
           break;
 
       case ButtonPress:
-          // TODO: Handle mouse button presses
+        ; // HACK: C does not permit declarations after a case statement, here is an empty statement to make compiler happy
+        
+        // TODO: Handle mouse button presses
+        // TODO: Handle mod keys
+        unsigned int button_pressed = ((XButtonEvent*)&x11_event)->button;
+        int x = ((XButtonEvent*)&x11_event)->x;
+        int y = ((XButtonEvent*)&x11_event)->y;
+        log_debug("Pressed mouse button %d at coords (%d,%d)", button_pressed, x, y);
+        switch (button_pressed) {
+        case Button1:
+          break;
+        case Button2:
+          break;
+        case Button3:
+          break;
+        case Button4:
+          break;
+        case Button5:
+          break;                    
+        }
+          
           break;
 
       case ButtonRelease:
