@@ -102,6 +102,18 @@ char mod_key_str[64];
 #define SHIFT_MOD_KEY (1 << 1)
 #define ALT_MOD_KEY (1 << 2)
 
+/* NOTE: Adding more descriptive aliases for X11's button macros.
+   There are some more buttons not described by the X11 header that
+   we might want to define here, too.
+ */
+
+// These are just unsigned ints
+#define LEFT_MOUSE_BUTTON        Button1 // 1
+#define RIGHT_MOUSE_BUTTON       Button3 // 3
+#define WHEEL_PRESS_MOUSE_BUTTON Button2 // 2
+#define WHEEL_UP_MOUSE_BUTTON    Button4 // 4
+#define WHEEL_DOWN_MOUSE_BUTTON  Button5 // 5
+
 /* Input handling inlines */
 static inline bool  ctrl_key_is_set() { return modifier_keys & CTRL_MOD_KEY;  };
 static inline bool shift_key_is_set() { return modifier_keys & SHIFT_MOD_KEY; };

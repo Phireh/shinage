@@ -255,16 +255,21 @@ int main(int argc, char *argv[])
         int y = ((XButtonEvent*)&x11_event)->y;
         log_debug("Pressed mouse button %d at coords (%d,%d)", button_pressed, x, y);
         switch (button_pressed) {
-        case Button1:
+        case LEFT_MOUSE_BUTTON: 
           break;
-        case Button2:
+        case WHEEL_PRESS_MOUSE_BUTTON: 
           break;
-        case Button3:
+        case RIGHT_MOUSE_BUTTON: 
           break;
-        case Button4:
+        case WHEEL_UP_MOUSE_BUTTON: 
           break;
-        case Button5:
-          break;                    
+        case WHEEL_DOWN_MOUSE_BUTTON:
+            break;
+        default:
+            /* TODO: Despite not being defined in X11/X.h,
+               we can capture button presses from additional mouse buttons (8, 9...)
+             */
+            break;
         }
           
           break;
