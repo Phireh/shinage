@@ -294,6 +294,10 @@ int main(int argc, char *argv[])
       case Expose:
           /* The window has been resized */
           XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
+          x11_window_width = x11_window_attr.width;
+          x11_window_height = x11_window_attr.height;
+          /* Update glVierport coordinates to properly adjust to the new window size */
+          glViewport(0, 0, x11_window_width, x11_window_height);
           log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
           break;
       }
