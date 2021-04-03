@@ -39,7 +39,7 @@ typedef union {
 
 typedef union {
   // Access as vector components
-  vec2f rows[3];
+  vec3f rows[3];
   // Access as individual components
   struct {
     float a1;
@@ -71,7 +71,7 @@ typedef union {
 
 typedef union {
     // Access as vector components
-    vec2f rows[4];
+    vec4f rows[4];
     // Access as individual components
     struct {
         float a1;
