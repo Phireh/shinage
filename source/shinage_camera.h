@@ -5,8 +5,9 @@
 /* TODO: Check if operations on this struct are more performant when passed as reference
    instead of doing it by value */
 typedef struct {
-    vec3f position;
+    vec3f pos;
     vec3f target;
+    vec3f up;
     float fov;
     float near;
     float far;
@@ -36,7 +37,31 @@ static inline mat4x4f proj_matrix(camera_t camera)
 
 static inline mat4x4f view_matrix(camera_t camera)
 {
-    // ...
+    vec3f mz = { .x = camera.pos.x - camera.target.x,
+                 .y = camera.pos.y - camera.target.y,
+                 .z = camera.pos.z - camera.target.z
+    };
+    mz = normalize3f(mz);
+    
+    vec3f my = camera.up;
+    vec3f mx = cross_product3f(my, mz);
+    mx = normalize3f(mx);
+    my = cross_product3f(mz, my);
+    vec3f _mz = { .x = -mz.x, .y = -mz.y, .z = -mz.z };
+    vec4f last_row = {
+        .x = dot_product3f(mx, camera.pos),
+        .y = dot_product3f(my, camera.pos),
+        .z = dot_product3f(_mz, camera.pos),
+        .w = 1.0f
+    };
+
+    mat4x4f matrix = {
+        .a1 = mx.x, .b1 = my.x, .c1 = mz.x, .d1 = 0.0f,
+        .a2 = mx.y, .b2 = my.y, .c2 = mz.y, .d2 = 0.0f,
+        .a3 = mx.z, .b3 = my.z, .c3 = mz.z, .d3 = 0.0f,
+        .rows[3] = last_row
+    };
+    return matrix;
 }
 
 #endif

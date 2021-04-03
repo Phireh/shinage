@@ -18,7 +18,7 @@
 
 /* Internal includes */
 #include "shinage_math.h"
-
+#include "shinage_camera.h"
 
 /* Convenience macros */
 // NOTE: ##__VA_ARGS__ is a compiler extension and may not be portable. Maybe check for compiler defs here.

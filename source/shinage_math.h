@@ -106,6 +106,15 @@ const mat3x3f identity_matrix_3x3 = {
   .a3 = 0, .b3 = 0, .c3 = 1
 };
 
+const mat4x4f identity_matrix_4x4 = {
+  .a1 = 1, .b1 = 0, .c1 = 0, .d1 = 0,
+  .a2 = 0, .b2 = 1, .c2 = 0, .d2 = 0,
+  .a3 = 0, .b3 = 0, .c3 = 1, .d3 = 0,
+  .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
+};
+
+const vec3f up_vector = { .x = 0, .y = 1, .z = 0 };
+
 static inline float deg_to_rad(float degrees)
 {
     return (degrees * M_PI) / 180.0f;
