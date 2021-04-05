@@ -178,129 +178,186 @@ int main(int argc, char *argv[])
   XWindowAttributes x11_window_attr;
   XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
 
-  /* Window message loop */
+  /* Main loop */
   XEvent x11_event;
   KeySym keysym = 0;
   main_loop_state_t main_loop_state = RUNNING;
   while (main_loop_state == RUNNING)
   {
+      /* Swap current frame input for last one's */
+      player_input_t *tmp_input_pointer = last_frame_input;
+      last_frame_input = curr_frame_input;      
+      curr_frame_input = tmp_input_pointer;
+
+      /* Reset to 0 all inputs except the cursor position */
+      for (int i = 0; i < MAX_PLAYERS; ++i)
+      {
+          curr_frame_input[i] = empty_player_input;
+          curr_frame_input[i].cursor_x = last_frame_input[i].cursor_x;
+          curr_frame_input[i].cursor_y = last_frame_input[i].cursor_y;
+      }
+          
+      
+      player_input_t *player1_input = &curr_frame_input[PLAYER_1];
+      
       /* Event handling */      
       // TODO: Sleep so we don't burn the CPU
-      XNextEvent(x11_display, &x11_event);
 
-      switch (x11_event.type)
+      while(XPending(x11_display))
       {
-      case KeymapNotify:
-      case MappingNotify:
-          // TODO: Maybe MappingNotify needs more logic?
-          XRefreshKeyboardMapping(&x11_event.xmapping);
-          break;
+          XNextEvent(x11_display, &x11_event);
 
-      case KeyPress:
-          keysym = XLookupKeysym(&x11_event.xkey, 0);
+          switch (x11_event.type)
+          {
+          case KeymapNotify:
+          case MappingNotify:
+              // TODO: Maybe MappingNotify needs more logic?
+              // TODO: Input remapping
+              XRefreshKeyboardMapping(&x11_event.xmapping);
+              break;
 
-          /* Look for modifier keys */
-          unsigned int mod_keys = ((XKeyEvent*)&x11_event)->state;
-          dispatch_mod_keys(mod_keys);
-          log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+          case KeyPress:
+              keysym = XLookupKeysym(&x11_event.xkey, 0);
+
+              /* Look for modifier keys */
+              unsigned int mod_keys = ((XKeyEvent*)&x11_event)->state;
+              dispatch_mod_keys(mod_keys);
+//              log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
           
-          switch (keysym)
-          {
-          case XK_Escape:
-              main_loop_state = FINISHED;
+              switch (keysym)
+              {
+              case XK_Escape:
+                  main_loop_state = FINISHED;
+                  break;
+
+              case XK_Shift_L:
+              case XK_Shift_R:
+                  set_shift_key();
+                  break;
+              case XK_Control_L:
+              case XK_Control_R:
+                  set_ctrl_key();
+                  break;
+              case XK_Alt_L:
+              case XK_Alt_R:
+                  set_alt_key();
+                  break;
+
+              case XK_W:
+              case XK_w:
+                  log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+                  player1_input->up = true;
+                  break;
+              case XK_S:
+              case XK_s:
+                  log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+                  player1_input->down = true;
+                  break;
+              case XK_A:
+              case XK_a:
+                  log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+                  player1_input->left = true;
+                  break;
+              case XK_D:
+              case XK_d:
+                  log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+                  player1_input->right = true;
+                  break;
+              }
               break;
 
-          case XK_Shift_L:
-          case XK_Shift_R:
-              set_shift_key();
-              break;
-          case XK_Control_L:
-          case XK_Control_R:
-              set_ctrl_key();
-              break;
-          case XK_Alt_L:
-          case XK_Alt_R:
-              set_alt_key();
-              break;                            
-          }
-          break;
+          case KeyRelease:
+              /* NOTE: Is there anything to do here? If we are taking into acount this and the
+                 last frame's input, this only will be useful if the player pressed and released
+                 an input button *in the same frame*, which borders non-human capabilities */
 
-      case KeyRelease:
-
-          keysym = XLookupKeysym(&x11_event.xkey, 0);
-          switch (keysym)
-          {
-          case XK_Shift_L:
-          case XK_Shift_R:
-              unset_shift_key();
+              keysym = XLookupKeysym(&x11_event.xkey, 0);
+              switch (keysym)
+              {
+              case XK_Shift_L:
+              case XK_Shift_R:
+                  unset_shift_key();
+                  break;
+              case XK_Control_L:
+              case XK_Control_R:
+                  unset_ctrl_key();
+                  break;
+              case XK_Alt_L:
+              case XK_Alt_R:
+                  unset_alt_key();
+                  break;                            
+              }
               break;
-          case XK_Control_L:
-          case XK_Control_R:
-              unset_ctrl_key();
-              break;
-          case XK_Alt_L:
-          case XK_Alt_R:
-              unset_alt_key();
-              break;                            
-          }
-          break;
 
-      case ButtonPress:
-        ; // HACK: C does not permit declarations after a case statement, here is an empty statement to make compiler happy
+          case ButtonPress:
+              ; // HACK: C does not permit declarations after a case statement, here is an empty statement to make compiler happy
         
-        // TODO: Handle mouse button presses
-        // TODO: Handle mod keys
-        unsigned int button_pressed = ((XButtonEvent*)&x11_event)->button;
-        int x = ((XButtonEvent*)&x11_event)->x;
-        int y = ((XButtonEvent*)&x11_event)->y;
-        log_debug("Pressed mouse button %d at coords (%d,%d)", button_pressed, x, y);
-        switch (button_pressed) {
-        case LEFT_MOUSE_BUTTON: 
-          break;
-        case WHEEL_PRESS_MOUSE_BUTTON: 
-          break;
-        case RIGHT_MOUSE_BUTTON: 
-          break;
-        case WHEEL_UP_MOUSE_BUTTON: 
-          break;
-        case WHEEL_DOWN_MOUSE_BUTTON:
-            break;
-        default:
-            /* TODO: Despite not being defined in X11/X.h,
-               we can capture button presses from additional mouse buttons (8, 9...)
-             */
-            break;
-        }
-          
-          break;
+              // TODO: Handle mouse button presses
+              // TODO: Handle mod keys
+              unsigned int button_pressed = ((XButtonEvent*)&x11_event)->button;
+              int x = ((XButtonEvent*)&x11_event)->x;
+              int y = ((XButtonEvent*)&x11_event)->y;
+              log_debug("Pressed mouse button %d at coords (%d,%d)", button_pressed, x, y);
+              switch (button_pressed) {
+              case LEFT_MOUSE_BUTTON:
+                  player1_input->mouse_left_click = true;
+                  break;
+              case WHEEL_PRESS_MOUSE_BUTTON: 
+                  break;
+              case RIGHT_MOUSE_BUTTON:
+                  player1_input->mouse_right_click = true;
+                  break;
+              case WHEEL_UP_MOUSE_BUTTON: 
+                  break;
+              case WHEEL_DOWN_MOUSE_BUTTON:
+                  break;
+              default:
+                  /* TODO: Despite not being defined in X11/X.h,
+                     we can capture button presses from additional mouse buttons (8, 9...)
+                  */
+                  break;
+              }
+        
+              break;
 
-      case ButtonRelease:
-          // TODO: Handle mouse button releases
-          break;
+          case ButtonRelease:
+              /* NOTE: Is there anything to do here? If we are taking into acount this and the
+                 last frame's input, this only will be useful if the player pressed and released
+                 an input button *in the same frame*, which borders non-human capabilities */
+              break;
 
-      case MotionNotify:
-          // TODO: Handle mouse drags
-          break;
+          case MotionNotify:
+              // TODO: Handle mouse drags
+              break;
 
-      case ClientMessage:
-          /* Petition to close window by the window manager. See Xlib's ICCCM docs */
-          if (x11_event.xclient.data.l[0] == (long int)wmDeleteMessage)
-          {
-              main_loop_state = FINISHED;
-              log_debug("Closing window by window manager's request");
+          case ClientMessage:
+              /* Petition to close window by the window manager. See Xlib's ICCCM docs */
+              if (x11_event.xclient.data.l[0] == (long int)wmDeleteMessage)
+              {
+                  main_loop_state = FINISHED;
+                  log_debug("Closing window by window manager's request");
+              }
+              break;
+
+          case Expose:
+              /* The window has been resized */
+              XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
+              x11_window_width = x11_window_attr.width;
+              x11_window_height = x11_window_attr.height;
+              /* Update glVierport coordinates to properly adjust to the new window size */
+              glViewport(0, 0, x11_window_width, x11_window_height);
+              log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
+              break;
           }
-          break;
-
-      case Expose:
-          /* The window has been resized */
-          XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
-          x11_window_width = x11_window_attr.width;
-          x11_window_height = x11_window_attr.height;
-          /* Update glVierport coordinates to properly adjust to the new window size */
-          glViewport(0, 0, x11_window_width, x11_window_height);
-          log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
-          break;
       }
+      
+      /* Copy mod_key information to player input struct */
+      player1_input->alt = alt_key_is_set();
+      player1_input->ctrl = ctrl_key_is_set();
+      player1_input->shift = shift_key_is_set();                
+
+      /* Logic */
+      test_triangle_logic(player1_input);
 
       /* Rendering */
 
@@ -357,7 +414,7 @@ void draw_gl_triangle(void)
     float vertices[] = {
        -0.5f,  -0.5f,
         0.5f,  -0.5f,
-        0.0f, 0.5f
+        0.0f,   0.5f
         
     };
     
@@ -365,6 +422,12 @@ void draw_gl_triangle(void)
     if (!triangle_program)
         triangle_program = make_gl_program(test_vertex_shader, test_fragment_shader);
     glUseProgram(triangle_program);
+
+    static int translation_uniform_pos = -1;
+    if (translation_uniform_pos == -1)
+        translation_uniform_pos = glGetUniformLocation(triangle_program, "translation");
+
+    glUniform3f(translation_uniform_pos, test_triangle.position.x, test_triangle.position.y, test_triangle.position.z);
 
     static unsigned int vao;
     if (!vao)
@@ -431,6 +494,19 @@ unsigned int build_shader(char *source, int type)
     return shader;
 }
 
+/* Temp function to mess around with input and position control */
+void test_triangle_logic(player_input_t *input)
+{
+    if (input->right || input->left || input->up || input->down)
+    {
+        log_debug("Moving %d %d %d %d", input->right, input->left, input->up, input->down);
+        move_entity(&test_triangle,
+                    input->right * 0.1f - input->left * 0.1f, // x offset
+                    input->up * 0.1f - input->down * 0.1f,    // y offset
+                    0.0f);
+    }
+};
+
 int link_gl_functions(void)
 {
     // TODO: Error handling
@@ -453,6 +529,8 @@ int link_gl_functions(void)
     glBufferData              = (PFNGLBUFFERDATAPROC)             glXGetProcAddress((const GLubyte *)"glBufferData");
     glVertexAttribPointer     = (PFNGLVERTEXATTRIBPOINTERPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribPointer");
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)glXGetProcAddress((const GLubyte *)"glEnableVertexAttribArray");
+    glUniform3f               = (PFNGLUNIFORM3FPROC)              glXGetProcAddress((const GLubyte *)"glUniform3f");
+    glGetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)     glXGetProcAddress((const GLubyte *)"glGetUniformLocation");    
     
     return 1;
 }

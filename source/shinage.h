@@ -36,8 +36,15 @@ typedef enum {
     TOTAL
 } main_loop_state_t;
 
+typedef struct {
+    vec3f position;
+} entity_t;
+
 
 char *version = "0.1";
+
+/* Misc. globals for testing */
+entity_t test_triangle;
 
 /* X11 globals */
 Display *x11_display;
@@ -77,6 +84,8 @@ PFNGLBINDBUFFERPROC              glBindBuffer;
 PFNGLBUFFERDATAPROC              glBufferData;
 PFNGLVERTEXATTRIBPOINTERPROC     glVertexAttribPointer;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+PFNGLUNIFORM3FPROC               glUniform3f;
+PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation;
 
     
 /* OpenGL globals */
@@ -85,8 +94,11 @@ GLXContext glx_context;
 char *test_vertex_shader =
     "#version 150\n"      \
     "in vec2 position;\n" \
+    "uniform vec3 translation;\n" \
     "void main() {\n" \
-    "gl_Position = vec4(position, 0.0, 1.0);\n" \
+    "mat4 modelMatrix = mat4(1.0);\n"
+    "modelMatrix[3] = vec4(translation, 1.0);"
+    "gl_Position = modelMatrix*vec4(position, 0.0, 1.0);\n" \
     "}";
 
 char *test_fragment_shader =
@@ -95,10 +107,6 @@ char *test_fragment_shader =
     "void main() {\n" \
     "out_color = vec4(1.0, 1.0, 1.0, 1.0);\n" \
     "}";
-
-/* Input handling globals */
-uint8_t modifier_keys = 0;
-char mod_key_str[64];
 
 /* Input handling macros */
 #define CTRL_MOD_KEY (1 << 0)
@@ -117,18 +125,59 @@ char mod_key_str[64];
 #define WHEEL_UP_MOUSE_BUTTON    Button4 // 4
 #define WHEEL_DOWN_MOUSE_BUTTON  Button5 // 5
 
+typedef enum {
+    PLAYER_1 = 0, PLAYER_2 = 1, PLAYER_3 = 2, PLAYER_4 = 3, MAX_PLAYERS = 4
+} player_idx_t;
+
+
+/* Input handling types */
+// TODO: complete input
+// TODO: extra data structure for input remapping info
+
+typedef union {
+    struct {        
+        bool                up;
+        bool              down;
+        bool              left;
+        bool             right;
+        bool  mouse_left_click;
+        bool mouse_right_click;        
+        /* NOTE: What are these coords relative to? Whatever it is, it should be
+         consistent between platforms */
+        unsigned int  cursor_x;
+        unsigned int  cursor_y;
+        bool               alt;
+        bool              ctrl;
+        bool             shift;
+    };
+} player_input_t;
+
+/* Input handling globals */
+uint8_t modifier_keys = 0;
+char mod_key_str[64];
+
+/* NOTE: For performance reasons we want to access these as pointers and swap them around
+   each frame instead of accessing them directly. Henceforth the _ prefix */   
+
+player_input_t _curr_frame_input[MAX_PLAYERS]; 
+player_input_t _last_frame_input[MAX_PLAYERS];
+
+player_input_t *curr_frame_input = &_curr_frame_input[0];
+player_input_t *last_frame_input = &_last_frame_input[0];
+const player_input_t empty_player_input = {};
+
 /* Input handling inlines */
-static inline bool  ctrl_key_is_set() { return modifier_keys & CTRL_MOD_KEY;  };
+static inline bool  ctrl_key_is_set() { return modifier_keys &  CTRL_MOD_KEY; };
 static inline bool shift_key_is_set() { return modifier_keys & SHIFT_MOD_KEY; };
-static inline bool   alt_key_is_set() { return modifier_keys & ALT_MOD_KEY;   };
+static inline bool   alt_key_is_set() { return modifier_keys &   ALT_MOD_KEY; };
 
-static inline void  set_ctrl_key() { modifier_keys |= CTRL_MOD_KEY;  };
+static inline void  set_ctrl_key() { modifier_keys |=  CTRL_MOD_KEY; };
 static inline void set_shift_key() { modifier_keys |= SHIFT_MOD_KEY; };
-static inline void   set_alt_key() { modifier_keys |= ALT_MOD_KEY;   };
+static inline void   set_alt_key() { modifier_keys |=   ALT_MOD_KEY; };
 
-static inline void  unset_ctrl_key() { modifier_keys &= !CTRL_MOD_KEY;  };
+static inline void  unset_ctrl_key() { modifier_keys &=  !CTRL_MOD_KEY; };
 static inline void unset_shift_key() { modifier_keys &= !SHIFT_MOD_KEY; };
-static inline void   unset_alt_key() { modifier_keys &= !ALT_MOD_KEY;   };
+static inline void   unset_alt_key() { modifier_keys &=   !ALT_MOD_KEY; };
 
 static inline char *mod_key_str_prefix()
 {
@@ -156,8 +205,14 @@ static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
         set_alt_key();
 }
 
+/* Misc. inline functions */
 
-
+static inline void move_entity(entity_t *e, float x_offset, float y_offset, float z_offset)
+{
+    e->position.x += x_offset;
+    e->position.y += y_offset;
+    e->position.z += z_offset;
+}
 
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
@@ -165,5 +220,6 @@ void draw_gl_triangle(void);
 int link_gl_functions(void);
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
 unsigned int build_shader(char *source, int type);
+void test_triangle_logic(player_input_t *input);
 
 #endif
