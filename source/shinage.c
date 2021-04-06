@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
               x11_window_height = x11_window_attr.height;
               /* Update glVierport coordinates to properly adjust to the new window size */
               glViewport(0, 0, x11_window_width, x11_window_height);
-              log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
+              log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);              
               break;
           }
       }
@@ -357,6 +357,10 @@ int main(int argc, char *argv[])
       player1_input->shift = shift_key_is_set();                
 
       /* Logic */
+      // Update camera aspect ratio if we got resized
+      main_camera.viewport_w = x11_window_width;
+      main_camera.viewport_h = x11_window_height;
+      
       test_triangle_logic(player1_input);
 
       /* Rendering */
@@ -427,8 +431,23 @@ void draw_gl_triangle(void)
     if (translation_uniform_pos == -1)
         translation_uniform_pos = glGetUniformLocation(triangle_program, "translation");
 
+    static int vmatrix_uniform_pos = -1;
+    if (vmatrix_uniform_pos == -1)
+        vmatrix_uniform_pos = glGetUniformLocation(triangle_program, "viewMatrix");
+
+    static int pmatrix_uniform_pos = -1;
+    if (pmatrix_uniform_pos == -1)
+        pmatrix_uniform_pos = glGetUniformLocation(triangle_program, "projMatrix");
+
+    mat4x4f vmatrix = view_matrix(main_camera);
+    mat4x4f pmatrix = proj_matrix(main_camera);
+    
+
     glUniform3f(translation_uniform_pos, test_triangle.position.x, test_triangle.position.y, test_triangle.position.z);
 
+    glUniformMatrix4fv(vmatrix_uniform_pos, 1, true, vmatrix.v);
+    glUniformMatrix4fv(pmatrix_uniform_pos, 1, true, pmatrix.v);
+    
     static unsigned int vao;
     if (!vao)
         glGenVertexArrays(1, &vao);
@@ -499,12 +518,28 @@ void test_triangle_logic(player_input_t *input)
 {
     if (input->right || input->left || input->up || input->down)
     {
-        log_debug("Moving %d %d %d %d", input->right, input->left, input->up, input->down);
-        move_entity(&test_triangle,
-                    input->right * 0.1f - input->left * 0.1f, // x offset
-                    input->up * 0.1f - input->down * 0.1f,    // y offset
-                    0.0f);
-    }
+        if (input->ctrl)
+        {
+            main_camera.pos.x += input->right * 0.1f - input->left * 0.1f; // x offset
+            main_camera.pos.y += input->up * 0.1f - input->down * 0.1f; // y offset
+        }
+        else
+        {
+            move_entity(&test_triangle,
+                        input->right * 0.1f - input->left * 0.1f, // x offset
+                        input->up * 0.1f - input->down * 0.1f,    // y offset
+                        0.0f);
+            
+            main_camera.target = test_triangle.position;
+        }
+        log_debug("CAMERA POS %.1f %.1f %.1f LOOKING AT %.1f %.1f %.1f", main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, test_triangle.position.x, test_triangle.position.y, test_triangle.position.z);
+        mat4x4f vmatrix = view_matrix(main_camera);
+        log_debug("VIEW MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
+                  vmatrix.a1, vmatrix.b1, vmatrix.c1, vmatrix.d1,
+                  vmatrix.a2, vmatrix.b2, vmatrix.c2, vmatrix.d2,
+                  vmatrix.a3, vmatrix.b3, vmatrix.c3, vmatrix.d3,
+                  vmatrix.a4, vmatrix.b4, vmatrix.c4, vmatrix.d4);
+    }    
 };
 
 int link_gl_functions(void)
@@ -531,6 +566,6 @@ int link_gl_functions(void)
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)glXGetProcAddress((const GLubyte *)"glEnableVertexAttribArray");
     glUniform3f               = (PFNGLUNIFORM3FPROC)              glXGetProcAddress((const GLubyte *)"glUniform3f");
     glGetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)     glXGetProcAddress((const GLubyte *)"glGetUniformLocation");    
-    
+    glUniformMatrix4fv        = (PFNGLUNIFORMMATRIX4FVPROC)       glXGetProcAddress((const GLubyte *)"glUniformMatrix4fv");    
     return 1;
 }

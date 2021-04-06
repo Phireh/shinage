@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 /* X11 server includes:
    requires linking with -lX11 */
@@ -17,16 +18,11 @@
 #include <GL/glext.h>
 
 /* Internal includes */
+#include "shinage_debug.h"
 #include "shinage_math.h"
 #include "shinage_camera.h"
 
-/* Convenience macros */
-// NOTE: ##__VA_ARGS__ is a compiler extension and may not be portable. Maybe check for compiler defs here.
-#define log_err(str, ...) fprintf(stderr, "[ERROR] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
-#define log_debug(str, ...) fprintf(stderr, "[DEBUG] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
-
-#define log_info(str, ...) fprintf(stderr, "[INFO] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
 /* Types */
 typedef enum {
@@ -43,8 +39,6 @@ typedef struct {
 
 char *version = "0.1";
 
-/* Misc. globals for testing */
-entity_t test_triangle;
 
 /* X11 globals */
 Display *x11_display;
@@ -56,6 +50,18 @@ int x11_window_y_coord = 0;
 int x11_window_width = 320;
 int x11_window_height = 200;
 unsigned int x11_window_border_size = 1;
+
+/* Misc. globals for testing */
+entity_t test_triangle;
+camera_t main_camera = {
+    .pos = { .x = 0.0f, .y = 0.0f, .z = 1.0f },
+    .fov = 45.0f,
+    .up = { .x = 0.0f, .y = 1.0f, .z = 0.0f },
+    .near = 0.0f,
+    .far = 10.0f,
+    .viewport_w = 320,
+    .viewport_h = 200
+};
 
 
 /* OpenGL defines */
@@ -86,7 +92,7 @@ PFNGLVERTEXATTRIBPOINTERPROC     glVertexAttribPointer;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLUNIFORM3FPROC               glUniform3f;
 PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation;
-
+PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
     
 /* OpenGL globals */
 GLXContext glx_context;
@@ -95,10 +101,12 @@ char *test_vertex_shader =
     "#version 150\n"      \
     "in vec2 position;\n" \
     "uniform vec3 translation;\n" \
+    "uniform mat4 viewMatrix;\n"  \
+    "uniform mat4 projMatrix;\n"  \
     "void main() {\n" \
     "mat4 modelMatrix = mat4(1.0);\n"
     "modelMatrix[3] = vec4(translation, 1.0);"
-    "gl_Position = modelMatrix*vec4(position, 0.0, 1.0);\n" \
+    "gl_Position = projMatrix*viewMatrix*modelMatrix*vec4(position, 0.0, 1.0);\n" \
     "}";
 
 char *test_fragment_shader =

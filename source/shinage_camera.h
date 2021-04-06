@@ -1,6 +1,7 @@
 #ifndef SHINAGE_CAMERA_H
 #define SHINAGE_CAMERA_H
 #include "shinage_math.h"
+#include "shinage_debug.h"
 
 /* TODO: Check if operations on this struct are more performant when passed as reference
    instead of doing it by value */
@@ -46,7 +47,7 @@ static inline mat4x4f view_matrix(camera_t camera)
     vec3f my = camera.up;
     vec3f mx = cross_product3f(my, mz);
     mx = normalize3f(mx);
-    my = cross_product3f(mz, my);
+    my = cross_product3f(mz, mx);
     vec3f _mz = { .x = -mz.x, .y = -mz.y, .z = -mz.z };
     vec4f last_row = {
         .x = dot_product3f(mx, camera.pos),
@@ -54,6 +55,10 @@ static inline mat4x4f view_matrix(camera_t camera)
         .z = dot_product3f(_mz, camera.pos),
         .w = 1.0f
     };
+
+    log_debug("mx %.3f %.3f %.3f", mx.x, mx.y, mx.z);
+    log_debug("my %.3f %.3f %.3f", my.x, my.y, my.z);
+    log_debug("mz %.3f %.3f %.3f", mz.x, mz.y, mz.z);
 
     mat4x4f matrix = {
         .a1 = mx.x, .b1 = my.x, .c1 = mz.x, .d1 = 0.0f,

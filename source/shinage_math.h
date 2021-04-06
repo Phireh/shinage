@@ -1,7 +1,8 @@
 #ifndef SHINAGE_MATH_H
 #define SHINAGE_MATH_H
-
 #include <math.h>
+#include "shinage_debug.h"
+
 
 typedef union {
   // Access as components
@@ -74,18 +75,22 @@ typedef union {
     vec4f rows[4];
     // Access as individual components
     struct {
+        // First vec
         float a1;
         float b1;
         float c1;
         float d1;
+        // Second vec
         float a2;
         float b2;
         float c2;
         float d2;
+        // Third vec
         float a3;
         float b3;
         float c3;
         float d3;
+        // Fourth vec
         float a4;
         float b4;
         float c4;
@@ -133,6 +138,7 @@ static inline vec3f cross_product3f(vec3f v1, vec3f v2)
         .y = v1.z * v2.x - v1.x * v2.z,
         .z = v1.x * v2.y - v1.y * v2.x
     };
+
     return cross_product;        
 }
 

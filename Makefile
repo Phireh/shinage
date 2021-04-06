@@ -1,5 +1,5 @@
 CFLAGS=-Wall -Wextra -Werror -g
-LIBS=-lX11 -lGL
+LIBS=-lX11 -lGL -lm
 CC=gcc
 SOURCE=source
 
