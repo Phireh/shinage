@@ -56,15 +56,11 @@ static inline mat4x4f view_matrix(camera_t camera)
         .w = 1.0f
     };
 
-    log_debug("mx %.3f %.3f %.3f", mx.x, mx.y, mx.z);
-    log_debug("my %.3f %.3f %.3f", my.x, my.y, my.z);
-    log_debug("mz %.3f %.3f %.3f", mz.x, mz.y, mz.z);
-
     mat4x4f matrix = {
         .a1 = mx.x, .b1 = my.x, .c1 = mz.x, .d1 = 0.0f,
         .a2 = mx.y, .b2 = my.y, .c2 = mz.y, .d2 = 0.0f,
         .a3 = mx.z, .b3 = my.z, .c3 = mz.z, .d3 = 0.0f,
-        .rows[3] = last_row
+        .a4 = last_row.x, .b4 = last_row.y, .c4 = last_row.z, .d4 = last_row.w
     };
     return matrix;
 }

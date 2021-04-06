@@ -445,8 +445,8 @@ void draw_gl_triangle(void)
 
     glUniform3f(translation_uniform_pos, test_triangle.position.x, test_triangle.position.y, test_triangle.position.z);
 
-    glUniformMatrix4fv(vmatrix_uniform_pos, 1, true, vmatrix.v);
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, true, pmatrix.v);
+    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
+    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
     
     static unsigned int vao;
     if (!vao)
@@ -539,6 +539,13 @@ void test_triangle_logic(player_input_t *input)
                   vmatrix.a2, vmatrix.b2, vmatrix.c2, vmatrix.d2,
                   vmatrix.a3, vmatrix.b3, vmatrix.c3, vmatrix.d3,
                   vmatrix.a4, vmatrix.b4, vmatrix.c4, vmatrix.d4);
+
+                mat4x4f pmatrix = proj_matrix(main_camera);
+        log_debug("PROJ MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
+                  pmatrix.a1, pmatrix.b1, pmatrix.c1, pmatrix.d1,
+                  pmatrix.a2, pmatrix.b2, pmatrix.c2, pmatrix.d2,
+                  pmatrix.a3, pmatrix.b3, pmatrix.c3, pmatrix.d3,
+                  pmatrix.a4, pmatrix.b4, pmatrix.c4, pmatrix.d4);
     }    
 };
 
