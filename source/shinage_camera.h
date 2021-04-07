@@ -24,7 +24,7 @@ static inline mat4x4f proj_matrix(camera_t camera)
     float fn = far + near;
     float nf = far - near;
     float r = (float)camera.viewport_w / (float)camera.viewport_h;
-    float t = 1.0f / (tan(deg_to_rad(camera.fov)) / 2.0f);
+    float t = 1.0f / (tan(deg_to_rad(camera.fov) / 2.0f));
 
 
     mat4x4f matrix = {
