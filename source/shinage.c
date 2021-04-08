@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   x11_window_set_attr.background_pixel = WhitePixel(x11_display, x11_screen_id);
   x11_window_set_attr.override_redirect = True;
   x11_window_set_attr.colormap = XCreateColormap(x11_display, RootWindow(x11_display, x11_screen_id), glx_visual->visual, AllocNone);
-  x11_window_set_attr.event_mask = KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask | ButtonPressMask | ButtonReleaseMask | ButtonMotionMask;
+  x11_window_set_attr.event_mask = KeyPressMask | KeyReleaseMask | KeymapStateMask | ExposureMask | ButtonPressMask | ButtonReleaseMask | ButtonMotionMask | PointerMotionMask;
   
 
   // NOTE: We can't use XCreateSimpleWindow if we need GLX/OpenGL
@@ -188,14 +188,16 @@ int main(int argc, char *argv[])
       player_input_t *tmp_input_pointer = last_frame_input;
       last_frame_input = curr_frame_input;      
       curr_frame_input = tmp_input_pointer;
-
+      
       /* Reset to 0 all inputs except the cursor position */
+      modifier_keys = 0;
       for (int i = 0; i < MAX_PLAYERS; ++i)
       {
           curr_frame_input[i] = empty_player_input;
           curr_frame_input[i].cursor_x = last_frame_input[i].cursor_x;
           curr_frame_input[i].cursor_y = last_frame_input[i].cursor_y;
       }
+      
           
       
       player_input_t *player1_input = &curr_frame_input[PLAYER_1];
@@ -246,12 +248,12 @@ int main(int argc, char *argv[])
               case XK_W:
               case XK_w:
                   log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
-                  player1_input->up = true;
+                  player1_input->forward = true;
                   break;
               case XK_S:
               case XK_s:
                   log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
-                  player1_input->down = true;
+                  player1_input->back = true;
                   break;
               case XK_A:
               case XK_a:
@@ -263,6 +265,16 @@ int main(int argc, char *argv[])
                   log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
                   player1_input->right = true;
                   break;
+
+              case XK_R:
+              case XK_r:
+                  log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+                  player1_input->up = true;
+                  break;
+              case XK_F:
+              case XK_f:
+                  log_debug("Pressed key %s%s", mod_key_str_prefix(), XKeysymToString(keysym));
+                  player1_input->down = true;
               }
               break;
 
@@ -290,8 +302,7 @@ int main(int argc, char *argv[])
               break;
 
           case ButtonPress:
-              ; // HACK: C does not permit declarations after a case statement, here is an empty statement to make compiler happy
-        
+            {        
               // TODO: Handle mouse button presses
               // TODO: Handle mod keys
               unsigned int button_pressed = ((XButtonEvent*)&x11_event)->button;
@@ -317,8 +328,7 @@ int main(int argc, char *argv[])
                   */
                   break;
               }
-        
-              break;
+            } break;
 
           case ButtonRelease:
               /* NOTE: Is there anything to do here? If we are taking into acount this and the
@@ -327,8 +337,13 @@ int main(int argc, char *argv[])
               break;
 
           case MotionNotify:
-              // TODO: Handle mouse drags
-              break;
+          {
+              int x = ((XPointerMovedEvent*)&x11_event)->x;
+              int y = ((XPointerMovedEvent*)&x11_event)->y;
+              player1_input->cursor_x = x;
+              player1_input->cursor_y = y;
+              log_debug("Moved pointer to (%d,%d)", x, y);
+          } break;
 
           case ClientMessage:
               /* Petition to close window by the window manager. See Xlib's ICCCM docs */
@@ -361,14 +376,18 @@ int main(int argc, char *argv[])
       main_camera.viewport_w = x11_window_width;
       main_camera.viewport_h = x11_window_height;
       
-      test_triangle_logic(player1_input);
+        //      test_triangle_logic(player1_input);
+      test_entity_logic(player1_input, &test_pyramid);
 
       /* Rendering */
 
       // NOTE: This is just for testing that OpenGL actually works
       glClearColor(1.0f, 0.6f, 1.0f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
-      draw_gl_triangle();      
+        //      glEnable(GL_DEPTH_TEST);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      
+        //      draw_gl_triangle();
+      draw_gl_pyramid();
       glXSwapBuffers(x11_display, x11_window);      
   }
 
@@ -467,6 +486,90 @@ void draw_gl_triangle(void)
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
+void draw_gl_pyramid(void)
+{
+    float vertices[] = {
+       0.0f,   0.43f,   0.0f,
+      -0.5f,  -0.43f,  -0.5f,
+       0.5f,  -0.43f,  -0.5f,
+       0.0f,  -0.43f,   0.5f 
+    };
+
+    float colours[] = {
+      1.0f,   1.0f,   1.0f,
+      1.0f,   0.0f,   0.0f,
+      0.0f,   1.0f,   0.0f,
+      0.0f,   0.0f,   1.0f  
+    };
+
+    uint num_indices = 12;
+    uint indices[] =
+      {
+        3,1,2, 0,1,2, 0,3,2, 0,2,3
+      };
+    
+    static unsigned int pyramid_program = 0;
+    if (!pyramid_program)
+        pyramid_program = make_gl_program(pyramid_vertex_shader, pyramid_fragment_shader);
+    glUseProgram(pyramid_program);
+
+    static int translation_uniform_pos = -1;
+    if (translation_uniform_pos == -1)
+        translation_uniform_pos = glGetUniformLocation(pyramid_program, "translation");
+
+    static int vmatrix_uniform_pos = -1;
+    if (vmatrix_uniform_pos == -1)
+        vmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "viewMatrix");
+
+    static int pmatrix_uniform_pos = -1;
+    if (pmatrix_uniform_pos == -1)
+        pmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "projMatrix");
+
+    mat4x4f vmatrix = view_matrix(main_camera);
+    mat4x4f pmatrix = proj_matrix(main_camera);
+    
+
+    glUniform3f(translation_uniform_pos, test_pyramid.position.x, test_pyramid.position.y, test_pyramid.position.z);
+
+    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
+    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
+    
+    static unsigned int vao = 0;
+    if (!vao)
+      glGenVertexArrays(1, &vao);
+    
+    glBindVertexArray(vao);
+    
+    static unsigned int position_bo = 0;
+    if (!position_bo)
+      glGenBuffers(1, &position_bo);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, position_bo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    static unsigned int colour_bo = 0;
+    if (!colour_bo)
+      glGenBuffers(1, &colour_bo);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(1);
+
+    static unsigned int element_bo = 0;
+    if (!element_bo)
+      glGenBuffers(1, &element_bo);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
+
+    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
+
+}
+
+
 
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source)
 {
@@ -514,25 +617,32 @@ unsigned int build_shader(char *source, int type)
 }
 
 /* Temp function to mess around with input and position control */
-void test_triangle_logic(player_input_t *input)
+void test_entity_logic(player_input_t *input, entity_t *e)
 {
-    if (input->right || input->left || input->up || input->down)
+    if (input->right || input->left || input->up || input->down || input->forward || input->back)
     {
         if (input->ctrl)
         {
-            main_camera.pos.x += input->right * 0.1f - input->left * 0.1f; // x offset
-            main_camera.pos.y += input->up * 0.1f - input->down * 0.1f; // y offset
+            main_camera.pos.x += input->right * 0.1f - input->left * 0.1f;      // x offset
+            main_camera.pos.y += input->up * 0.1f - input->down * 0.1f;         // y offset
+            main_camera.pos.z += input->forward * 0.1f - input->back * 0.1f;    // z offset
+        }
+        else if (input->shift)
+        {
+            main_camera.target.x += input->right * 0.1f - input->left * 0.1f;      // x offset
+            main_camera.target.y += input->up * 0.1f - input->down * 0.1f;         // y offset
+            main_camera.target.z += input->forward * 0.1f - input->back * 0.1f;    // z offset
         }
         else
         {
-            move_entity(&test_triangle,
-                        input->right * 0.1f - input->left * 0.1f, // x offset
-                        input->up * 0.1f - input->down * 0.1f,    // y offset
-                        0.0f);
+            move_entity(e,
+                        input->right * 0.1f - input->left * 0.1f,     // x offset
+                        input->up * 0.1f - input->down * 0.1f,        // y offset
+                        input->forward * 0.1f - input->back * 0.1f);  // z offset
             
-            main_camera.target = test_triangle.position;
+              //main_camera.target = test_triangle.position;
         }
-        log_debug("CAMERA POS %.1f %.1f %.1f LOOKING AT %.1f %.1f %.1f", main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, test_triangle.position.x, test_triangle.position.y, test_triangle.position.z);
+        log_debug("CAMERA POS %.1f %.1f %.1f\nLOOKING AT %.1f %.1f %.1f\nENTITY POS %.1f %.1f %.1f", main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, main_camera.target.x, main_camera.target.y, main_camera.target.z, e->position.x, e->position.y, e->position.z);
         mat4x4f vmatrix = view_matrix(main_camera);
         log_debug("VIEW MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
                   vmatrix.a1, vmatrix.b1, vmatrix.c1, vmatrix.d1,

@@ -53,6 +53,7 @@ unsigned int x11_window_border_size = 1;
 
 /* Misc. globals for testing */
 entity_t test_triangle;
+entity_t test_pyramid;
 camera_t main_camera = {
     .pos = { .x = 0.0f, .y = 0.0f, .z = 1.0f },
     .fov = 90.0f,
@@ -116,6 +117,30 @@ char *test_fragment_shader =
     "out_color = vec4(1.0, 1.0, 1.0, 1.0);\n" \
     "}";
 
+
+char *pyramid_vertex_shader =
+    "#version 150\n"      \
+    "in vec3 position;\n" \
+    "in vec3 vColor;\n" \
+    "out vec3 fColor;\n" \
+    "uniform vec3 translation;\n" \
+    "uniform mat4 viewMatrix;\n"  \
+    "uniform mat4 projMatrix;\n"  \
+    "void main() {\n" \
+    "mat4 modelMatrix = mat4(1.0);\n" \
+    "modelMatrix[3] = vec4(translation, 1.0);\n" \
+    "gl_Position = projMatrix*viewMatrix*modelMatrix*vec4(position, 1.0);\n" \
+    "fColor = vColor;\n" \
+    "}";
+
+char *pyramid_fragment_shader =
+    "#version 150\n" \
+    "out vec4 out_color;\n" \
+    "in vec3 fColor;\n" \
+    "void main() {\n" \
+    "out_color = vec4(fColor, 1.0);\n" \
+    "}";
+
 /* Input handling macros */
 #define CTRL_MOD_KEY (1 << 0)
 #define SHIFT_MOD_KEY (1 << 1)
@@ -148,6 +173,8 @@ typedef union {
         bool              down;
         bool              left;
         bool             right;
+        bool           forward;
+        bool              back;
         bool  mouse_left_click;
         bool mouse_right_click;        
         /* NOTE: What are these coords relative to? Whatever it is, it should be
@@ -225,9 +252,10 @@ static inline void move_entity(entity_t *e, float x_offset, float y_offset, floa
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
 void draw_gl_triangle(void);
+void draw_gl_pyramid(void);
 int link_gl_functions(void);
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
 unsigned int build_shader(char *source, int type);
-void test_triangle_logic(player_input_t *input);
+void test_entity_logic(player_input_t *input, entity_t *e);
 
 #endif
