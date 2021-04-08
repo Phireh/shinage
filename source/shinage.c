@@ -383,10 +383,10 @@ int main(int argc, char *argv[])
 
       // NOTE: This is just for testing that OpenGL actually works
       glClearColor(1.0f, 0.6f, 1.0f, 1.0f);
-        //      glEnable(GL_DEPTH_TEST);
+      glEnable(GL_DEPTH_TEST);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       
-        //      draw_gl_triangle();
+        //draw_gl_triangle();
       draw_gl_pyramid();
       glXSwapBuffers(x11_display, x11_window);      
   }
