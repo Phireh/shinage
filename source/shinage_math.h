@@ -147,6 +147,18 @@ static inline float dot_product3f(vec3f v1, vec3f v2)
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+static inline vec3f sum3f(vec3f v1, vec3f v2)
+{
+    vec3f result = { .x = v1.x + v2.x, .y = v1.y + v2.y, .z = v1.z + v2.z };
+    return result;
+}
+
+static inline vec3f diff3f(vec3f v1, vec3f v2)
+{
+    vec3f result = { .x = v1.x - v2.x, .y = v1.y - v2.y, .z = v1.z - v2.z };
+    return result;
+}
+
 static inline vec3f normalize3f(vec3f vec)
 {
     float length = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
@@ -155,5 +167,39 @@ static inline vec3f normalize3f(vec3f vec)
     vec.z /= length;
     return vec;
 }
+
+/* Rotate vector v by d degrees around the X axis (pitch) */
+static inline vec3f x_axis_rot(vec3f v, float d)
+{
+    float angle = deg_to_rad(d);
+    vec3f new_vec;
+    new_vec.x = v.x;
+    new_vec.y = v.y * cos(angle) - v.z * sin(angle);
+    new_vec.z = v.y * sin(angle) + v.z * cos(angle);    
+    return new_vec;
+}
+
+/* Rotate vector v by d degrees around the Y axis (yaw) */
+static inline vec3f y_axis_rot(vec3f v, float d)
+{
+    float angle = deg_to_rad(d);
+    vec3f new_vec;
+    new_vec.x =  v.x * cos(angle) + v.z * sin(angle);
+    new_vec.y =  v.y;
+    new_vec.z = -v.x * sin(angle) + v.z * cos(angle);
+    return new_vec;
+}
+
+/* Rotate vector v by d degrees around the Z axis (roll) */
+static inline vec3f z_axis_rot(vec3f v, float d)
+{
+    float angle = deg_to_rad(d);
+    vec3f new_vec;
+    new_vec.x = v.x * cos(angle) - v.y * sin(angle);
+    new_vec.y = v.x * sin(angle) + v.y * cos(angle);
+    new_vec.z = v.z;
+    return new_vec;
+}
+
 
 #endif

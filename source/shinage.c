@@ -619,6 +619,10 @@ unsigned int build_shader(char *source, int type)
 /* Temp function to mess around with input and position control */
 void test_entity_logic(player_input_t *input, entity_t *e)
 {
+    if (input->mouse_right_click)
+    {
+        main_camera.targeted = !main_camera.targeted;
+    }
     if (input->right || input->left || input->up || input->down || input->forward || input->back)
     {
         if (input->ctrl)
@@ -629,9 +633,20 @@ void test_entity_logic(player_input_t *input, entity_t *e)
         }
         else if (input->shift)
         {
-            main_camera.target.x += input->right * 0.1f - input->left * 0.1f;      // x offset
-            main_camera.target.y += input->up * 0.1f - input->down * 0.1f;         // y offset
-            main_camera.target.z += input->forward * 0.1f - input->back * 0.1f;    // z offset
+            if (main_camera.targeted)
+            {
+                vec3f new_target = {
+                  .x = main_camera.target.x + input->right * 0.1f - input->left * 0.1f,
+                  .y = main_camera.target.y + input->up * 0.1f - input->down * 0.1f,
+                  .z = main_camera.target.z + input->forward * 0.1f - input->back * 0.1f
+                };
+                look_at(&main_camera, new_target);
+            }
+            else
+            {
+                add_yaw(&main_camera, input->right * 5.0f - input->left * 5.0f);
+                add_pitch(&main_camera, input->forward * 5.0f - input->back * 5.0f);
+            }                
         }
         else
         {
@@ -642,7 +657,7 @@ void test_entity_logic(player_input_t *input, entity_t *e)
             
               //main_camera.target = test_triangle.position;
         }
-        log_debug("CAMERA POS %.1f %.1f %.1f\nLOOKING AT %.1f %.1f %.1f\nENTITY POS %.1f %.1f %.1f", main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, main_camera.target.x, main_camera.target.y, main_camera.target.z, e->position.x, e->position.y, e->position.z);
+        log_debug("CAMERA TARGETED %d POS %.1f %.1f %.1f\nLOOKING AT %.1f %.1f %.1f\nENTITY POS %.1f %.1f %.1f", main_camera.targeted, main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, main_camera.target.x, main_camera.target.y, main_camera.target.z, e->position.x, e->position.y, e->position.z);
         mat4x4f vmatrix = view_matrix(main_camera);
         log_debug("VIEW MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
                   vmatrix.a1, vmatrix.b1, vmatrix.c1, vmatrix.d1,
