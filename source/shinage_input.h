@@ -58,21 +58,31 @@ typedef struct {
   double stamp; 
 } key_input_t;
 
-typedef struct {        
-  key_input_t                up;
-  key_input_t              down;
-  key_input_t              left;
-  key_input_t             right;
-  key_input_t           forward;
-  key_input_t              back;
-  key_input_t  mouse_left_click;
-  key_input_t mouse_right_click;        
+typedef struct {
+  union {
+    struct {
+      key_input_t                up; // 1
+      key_input_t              down; // 2
+      key_input_t              left; // 3
+      key_input_t             right; // 4
+      key_input_t           forward; // 5
+      key_input_t              back; // 6
+      key_input_t  mouse_left_click; // 7
+      key_input_t mouse_right_click; // 8
+    };
+    /* HACK: This has to be the same size as the struct above. See
+     consume_first_presses below. */
+    key_input_t key_records[8];
+  };
   /* NOTE: What are these coords relative to? Whatever it is, it should be
      consistent between platforms */
   unsigned int         cursor_x;
   unsigned int         cursor_y;
- /* NOTE: The modifier keys do not seem to need the complicated handling done to others.
-    Their state will always be correct as soon as we get one event in a particular frame. */
+  /* These are redundant but make input passing easier so we'll keeping them as a test */
+  int cursor_x_delta;
+  int cursor_y_delta;
+  /* NOTE: The modifier keys do not seem to need the complicated handling done to others.
+     Their state will always be correct as soon as we get one event in a particular frame. */
   bool                      alt;
   bool                     ctrl;
   bool                    shift;
@@ -149,11 +159,12 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
             curr_input->stamp = curr_timestamp;
             next_input->state = HOLDING;
             next_input->stamp = curr_timestamp;
+            log_debug("case 1");
         }
         /* Case 2: The key is pressed now, and it was already being pressed */
-        else if (last_input->state & PRESSED)
+        else
         {
-
+            log_debug("case 2");
             curr_input->state = HOLDING;
             next_input->state = HOLDING;
             next_input->stamp = curr_input->stamp;
@@ -169,6 +180,7 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
             curr_input->state = JUST_RELEASED;
             next_input->state = UNPRESSED;
             next_input->stamp = curr_input->stamp;
+            log_debug("case 3");
         }
         /* Case 4: the key is not being pressed, and it stopped being pressed
            just the frame before. */
@@ -178,8 +190,23 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
             curr_input->state = UNPRESSED;
             next_input->state = UNPRESSED;
             next_input->stamp = curr_input->stamp;
+            log_debug("case 4");
         }
     }
+}
+
+/* HACK: See player_input_t above. When we swap current and future input
+   we have to visit our key records and delete any JUST_PRESSED entries
+   to make sure we don't loop between HOLDING and JUST_PRESSED states in the
+   absence of a X11 input event.
+   
+   This is *very* prone to breaking from changes in the input system */
+static inline void consume_first_presses(player_input_t *p)
+{
+    int nrecords = sizeof(p->key_records)/sizeof(p->key_records[0]);
+    for (int i = 0; i < nrecords; ++i)
+        if (p->key_records[i].state == JUST_PRESSED)
+            p->key_records[i].state = HOLDING;
 }
 
 /* Inline functions to query the current state of a key. 
@@ -203,7 +230,7 @@ static inline bool is_just_released(key_input_t key)
 
 static inline bool is_just_pressed(key_input_t key)
 {
-    return (key.state & JUST_PRESSED ? true : false);
+    return (key.state == JUST_PRESSED ? true : false);
 }
 
 #endif

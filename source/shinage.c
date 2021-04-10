@@ -220,6 +220,10 @@ int main(int argc, char *argv[])
       player_input_t *tmp_pointer = player1_input;      
       player1_input = player1_next_input;
       player1_next_input = tmp_pointer;
+
+      /* HACK: We are just starting a frame, so there can be no JUST_PRESSED
+         buttons just yet. Clean all of them for all active players */
+      consume_first_presses(player1_input);
       
       /* Event handling */      
       // TODO: Sleep so we don't burn the CPU
@@ -457,8 +461,18 @@ int main(int argc, char *argv[])
           {
               int x = ((XPointerMovedEvent*)&x11_event)->x;
               int y = ((XPointerMovedEvent*)&x11_event)->y;
+              /* Save old cursor coords */
+              player1_last_input->cursor_x = player1_input->cursor_x;
+              player1_last_input->cursor_y = player1_input->cursor_y;
+              
+              /* Store the new ones */
               player1_input->cursor_x = x;
               player1_input->cursor_y = y;
+
+              /* Store them for the next frame, too */
+              player1_next_input->cursor_x = x;
+              player1_next_input->cursor_y = y;
+              
               log_debug("Moved pointer to (%d,%d)", x, y);
           } break;
 
@@ -488,8 +502,12 @@ int main(int argc, char *argv[])
       /* Copy mod_key information to player input struct */
       player1_input->alt = alt_key_is_set();
       player1_input->ctrl = ctrl_key_is_set();
-      player1_input->shift = shift_key_is_set();                
+      player1_input->shift = shift_key_is_set();
 
+      /* Auxiliar struct members for comfier input handling */
+      player1_input->cursor_x_delta = (int)player1_input->cursor_x - (int)player1_last_input->cursor_x;
+      player1_input->cursor_y_delta = (int)player1_input->cursor_y - (int)player1_last_input->cursor_y;      
+      
       /* Logic */
       // Update camera aspect ratio if we got resized
       main_camera.viewport_w = x11_window_width;
@@ -747,15 +765,17 @@ void test_entity_logic(player_input_t *input, entity_t *e)
     bool back    = is_pressed(input->back);
     bool up      = is_pressed(input->up);
     bool down    = is_pressed(input->down);
+    int mouse_x = input->cursor_x_delta;
+    int mouse_y = input->cursor_y_delta;
 
-    //    log_debug("RIGHT %d LEFT %d FW %d BACK %d UP %d DOWN %d", right, left, forward, back, up, down);
-    
     if (is_just_pressed(input->mouse_right_click))
-    {        
+    {
+
         main_camera.targeted = !main_camera.targeted;
     }
-    if (right || left || forward || back || up || down)
+    if (right || left || forward || back || up || down || mouse_x || mouse_y)
     {
+
         log_debug("============ FRAME %d ============", framecount);
         if (input->ctrl)
         {
@@ -776,8 +796,8 @@ void test_entity_logic(player_input_t *input, entity_t *e)
             }
             else
             {
-                add_yaw(&main_camera, right * 5.0f - left * 5.0f);
-                add_pitch(&main_camera, forward * 5.0f - back * 5.0f);
+                add_yaw(&main_camera, (float)mouse_x);
+                add_pitch(&main_camera, (float)mouse_y);
             }                
         }
         else
