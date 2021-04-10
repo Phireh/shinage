@@ -28,12 +28,8 @@ typedef enum {
 // TODO: extra data structure for input remapping info
 
 /* TODO: Right now we only save a frame of history input. This is *not* enough for
-   complex motions or for distinguishing clicks from holds. Furthermore, only counting
-   frames without a wall clock makes the input detection frame-dependant, which we do
-   not want.
-   We may want to:
-   1 - Extend the number of frames we take in the history.
-   2 - Add a timestamp
+   complex motions or for distinguishing clicks from holds.
+   We may want to extend the number of frames we take in the history.
 */
 
 typedef enum {
@@ -153,9 +149,6 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
             curr_input->stamp = curr_timestamp;
             next_input->state = HOLDING;
             next_input->stamp = curr_timestamp;
-
-            //log_debug("Setting current state to JUST_PRESSED, next state to HOLDING");
-            
         }
         /* Case 2: The key is pressed now, and it was already being pressed */
         else if (last_input->state & PRESSED)

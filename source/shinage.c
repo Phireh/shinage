@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
       
       /* Event handling */      
       // TODO: Sleep so we don't burn the CPU
-      // TODO: Find why multiple keys at once don't work
+
 
       while(XPending(x11_display))
       {          
