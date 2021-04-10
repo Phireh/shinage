@@ -32,6 +32,8 @@ static inline void add_pitch(camera_t *c, float angle)
 {
     vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
     c->target = sum3f(x_axis_rot(look_at_vec, angle), c->pos);
+    c->pitch += angle;
+    log_debug("PITCH %f", c->pitch);
 }
 
 /* Increment the yaw (rotation around Y axis) of camera c by an angle in degrees */
@@ -39,6 +41,8 @@ static inline void add_yaw(camera_t *c, float angle)
 {
     vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
     c->target = sum3f(y_axis_rot(look_at_vec, angle), c->pos);
+    c->yaw += angle;
+    log_debug("YAW %f", c->yaw);
 }
 
 /* Increment the roll (rotation around Z axis) of camera c by an angle in degrees */
@@ -46,6 +50,7 @@ static inline void add_roll(camera_t *c, float angle)
 {
     vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
     c->target = sum3f(z_axis_rot(look_at_vec, angle), c->pos);
+    c->roll += angle;
 }
 
 

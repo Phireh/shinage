@@ -6,11 +6,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <time.h>
 
 /* X11 server includes:
    requires linking with -lX11 */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/XKBlib.h>
 
 /* OpenGL related includes:
    requires linking with -lGL */
@@ -21,7 +23,7 @@
 #include "shinage_debug.h"
 #include "shinage_math.h"
 #include "shinage_camera.h"
-
+#include "shinage_input.h"
 
 
 /* Types */
@@ -52,6 +54,7 @@ int x11_window_height = 200;
 unsigned int x11_window_border_size = 1;
 
 /* Misc. globals for testing */
+int framecount = 0;
 entity_t test_triangle;
 entity_t test_pyramid;
 camera_t main_camera = {
@@ -142,104 +145,6 @@ char *pyramid_fragment_shader =
     "out_color = vec4(fColor, 1.0);\n" \
     "}";
 
-/* Input handling macros */
-#define CTRL_MOD_KEY (1 << 0)
-#define SHIFT_MOD_KEY (1 << 1)
-#define ALT_MOD_KEY (1 << 2)
-
-/* NOTE: Adding more descriptive aliases for X11's button macros.
-   There are some more buttons not described by the X11 header that
-   we might want to define here, too.
- */
-
-// These are just unsigned ints
-#define LEFT_MOUSE_BUTTON        Button1 // 1
-#define RIGHT_MOUSE_BUTTON       Button3 // 3
-#define WHEEL_PRESS_MOUSE_BUTTON Button2 // 2
-#define WHEEL_UP_MOUSE_BUTTON    Button4 // 4
-#define WHEEL_DOWN_MOUSE_BUTTON  Button5 // 5
-
-typedef enum {
-    PLAYER_1 = 0, PLAYER_2 = 1, PLAYER_3 = 2, PLAYER_4 = 3, MAX_PLAYERS = 4
-} player_idx_t;
-
-
-/* Input handling types */
-// TODO: complete input
-// TODO: extra data structure for input remapping info
-
-typedef union {
-    struct {        
-        bool                up;
-        bool              down;
-        bool              left;
-        bool             right;
-        bool           forward;
-        bool              back;
-        bool  mouse_left_click;
-        bool mouse_right_click;        
-        /* NOTE: What are these coords relative to? Whatever it is, it should be
-         consistent between platforms */
-        unsigned int  cursor_x;
-        unsigned int  cursor_y;
-        bool               alt;
-        bool              ctrl;
-        bool             shift;
-    };
-} player_input_t;
-
-/* Input handling globals */
-uint8_t modifier_keys = 0;
-char mod_key_str[64];
-
-/* NOTE: For performance reasons we want to access these as pointers and swap them around
-   each frame instead of accessing them directly. Henceforth the _ prefix */   
-
-player_input_t _curr_frame_input[MAX_PLAYERS]; 
-player_input_t _last_frame_input[MAX_PLAYERS];
-
-player_input_t *curr_frame_input = &_curr_frame_input[0];
-player_input_t *last_frame_input = &_last_frame_input[0];
-const player_input_t empty_player_input = {};
-
-/* Input handling inlines */
-static inline bool  ctrl_key_is_set() { return modifier_keys &  CTRL_MOD_KEY; };
-static inline bool shift_key_is_set() { return modifier_keys & SHIFT_MOD_KEY; };
-static inline bool   alt_key_is_set() { return modifier_keys &   ALT_MOD_KEY; };
-
-static inline void  set_ctrl_key() { modifier_keys |=  CTRL_MOD_KEY; };
-static inline void set_shift_key() { modifier_keys |= SHIFT_MOD_KEY; };
-static inline void   set_alt_key() { modifier_keys |=   ALT_MOD_KEY; };
-
-static inline void  unset_ctrl_key() { modifier_keys &=  !CTRL_MOD_KEY; };
-static inline void unset_shift_key() { modifier_keys &= !SHIFT_MOD_KEY; };
-static inline void   unset_alt_key() { modifier_keys &=   !ALT_MOD_KEY; };
-
-static inline char *mod_key_str_prefix()
-{
-    char *s = mod_key_str;
-    *s = 0;
-    if (ctrl_key_is_set())
-        s += sprintf(s, "Ctrl + ");
-
-    if (shift_key_is_set())
-        s += sprintf(s, "Shift + ");
-
-    if (alt_key_is_set())
-        s += sprintf(s, "Alt + ");
-
-    return mod_key_str;
-}
-
-static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
-{
-    if (modifier_keys_bitmask & ShiftMask)
-        set_shift_key();
-    if (modifier_keys_bitmask & ControlMask)
-        set_ctrl_key();
-    if (modifier_keys_bitmask & Mod1Mask) // Mod1 is, usually, the Alt key
-        set_alt_key();
-}
 
 /* Misc. inline functions */
 
@@ -249,6 +154,42 @@ static inline void move_entity(entity_t *e, float x_offset, float y_offset, floa
     e->position.y += y_offset;
     e->position.z += z_offset;
 }
+
+
+/* TODO: Find if we get a monotonic clock that gives us a growing value with just one
+   call to initilize the clock */
+
+static inline double get_current_time()
+{
+    long            ns; // Nanoseconds
+    time_t          s;  // Seconds
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    s  = spec.tv_sec;
+    ns = spec.tv_nsec;
+
+    double currentSeconds = s + ns / 1.0e9;
+
+    return currentSeconds;
+}
+
+
+static inline float get_delta_time()
+{
+    static double time_lf = 0;
+    if (!time_lf)
+        time_lf = get_current_time();
+
+    double time_cf = get_current_time();
+    float delta = time_cf - time_lf;
+
+    time_lf = time_cf;
+    return delta;
+}
+
+
 
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
