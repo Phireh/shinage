@@ -58,8 +58,8 @@ int framecount = 0;
 entity_t test_triangle;
 entity_t test_pyramid;
 camera_t main_camera = {
-    .pos = { .x = 0.0f, .y = 0.0f, .z = 1.0f },
-    .target = { .x = 0.0f, .y = 0.0f, .z = -1.0f },
+    .pos = { .x = 0.0f, .y = 0.0f, .z = -1.0f },
+    .target = { .x = 0.0f, .y = 0.0f, .z = 0.0f },
     .fov = 90.0f,
     .up = { .x = 0.0f, .y = 1.0f, .z = 0.0f },
     .near = 0.01f,

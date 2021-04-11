@@ -3,6 +3,9 @@
 #include <math.h>
 #include "shinage_debug.h"
 
+/* Rough estimate of an epsilon value based on the ~7 digit precision of 
+   fp IEEE 754. Might need revision later */
+#define epsilon 0.0000001f
 
 typedef union {
   // Access as components
@@ -130,7 +133,6 @@ static inline float rad_to_deg(float radians)
     return (radians * 180.0f) / M_PI;
 }
 
-/* TODO: Test this */
 static inline vec3f cross_product3f(vec3f v1, vec3f v2)
 {
     vec3f cross_product = {
@@ -147,6 +149,12 @@ static inline float dot_product3f(vec3f v1, vec3f v2)
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+static inline vec3f hadamard_product3f(vec3f v1, vec3f v2)
+{
+    vec3f result = { .x = v1.x * v2.x, .y = v1.y * v2.y, .z = v1.z * v2.z };
+    return result;
+}
+
 static inline vec3f sum3f(vec3f v1, vec3f v2)
 {
     vec3f result = { .x = v1.x + v2.x, .y = v1.y + v2.y, .z = v1.z + v2.z };
@@ -159,12 +167,20 @@ static inline vec3f diff3f(vec3f v1, vec3f v2)
     return result;
 }
 
+static inline float length3f(vec3f vec)
+{
+    return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
 static inline vec3f normalize3f(vec3f vec)
 {
-    float length = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-    vec.x /= length;
-    vec.y /= length;
-    vec.z /= length;
+    float length = length3f(vec);
+    if (length > 0.0f)
+    {
+      vec.x /= length;
+      vec.y /= length;
+      vec.z /= length;
+    }          
     return vec;
 }
 
@@ -182,7 +198,7 @@ static inline vec3f x_axis_rot(vec3f v, float d)
 /* Rotate vector v by d degrees around the Y axis (yaw) */
 static inline vec3f y_axis_rot(vec3f v, float d)
 {
-    float angle = deg_to_rad(d);
+    float angle = deg_to_rad(d);    
     vec3f new_vec;
     new_vec.x =  v.x * cos(angle) + v.z * sin(angle);
     new_vec.y =  v.y;

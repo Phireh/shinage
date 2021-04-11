@@ -208,12 +208,12 @@ static inline bool is_pressed(key_input_t key)
 
 static inline bool is_held(key_input_t key)
 {
-    return (key.state & HOLDING ? true : false);
+    return (key.state == HOLDING ? true : false);
 }
 
 static inline bool is_just_released(key_input_t key)
 {
-    return (key.state & JUST_RELEASED ? true : false);
+    return (key.state == JUST_RELEASED ? true : false);
 }
 
 static inline bool is_just_pressed(key_input_t key)

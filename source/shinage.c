@@ -735,14 +735,32 @@ void test_entity_logic(player_input_t *input, entity_t *e)
     bool down    = is_pressed(input->down);
     int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;
+    bool reset   = is_just_pressed(input->mouse_left_click);
+
+    if (reset)
+    {
+        main_camera.pos.x =  0.0f;
+        main_camera.pos.y =  0.0f;
+        main_camera.pos.z = -1.0f;
+        main_camera.target.x = 0.0f;
+        main_camera.target.y = 0.0f;
+        main_camera.target.z = 0.0f;
+        main_camera.yaw = 0.0f;
+        main_camera.pitch = 0.0f;
+        main_camera.roll = 0.0f;
+    }
 
     if (right || left || forward || back || up || down || mouse_x || mouse_y)
     {
+        vec3f move_vector = {
+          .x = right * 0.1f - left * 0.1f,      // x offset
+          .y = up * 0.1f - down * 0.1f,         // y offset
+          .z = forward * 0.1f - back * 0.1f     // z offset
+        };
 
-        main_camera.pos.x += right * 0.1f - left * 0.1f;      // x offset
-        main_camera.pos.y += up * 0.1f - down * 0.1f;         // y offset
-        main_camera.pos.z += forward * 0.1f - back * 0.1f;    // z offset
+        log_debug("MOVE VEC %f %f %f", move_vector.x, move_vector.y, move_vector.z);
 
+        move_camera_by(&main_camera, move_vector, SELF);
 
         add_yaw(&main_camera, (float)mouse_x);
         add_pitch(&main_camera, (float)mouse_y);
@@ -766,7 +784,7 @@ void test_entity_logic(player_input_t *input, entity_t *e)
                   pmatrix.a2, pmatrix.b2, pmatrix.c2, pmatrix.d2,
                   pmatrix.a3, pmatrix.b3, pmatrix.c3, pmatrix.d3,
                   pmatrix.a4, pmatrix.b4, pmatrix.c4, pmatrix.d4);
-    }    
+    }
 };
 
 int link_gl_functions(void)

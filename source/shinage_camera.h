@@ -31,7 +31,9 @@ static inline void look_at(camera_t *c, vec3f t)
 static inline void add_pitch(camera_t *c, float angle)
 {
     vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
+    log_debug("OLD TARGET BEFORE PITCH %f %f", c->target.x, c->target.y);
     c->target = sum3f(x_axis_rot(look_at_vec, angle), c->pos);
+    log_debug("TARGET AFTER PITCH %f %f", c->target.x, c->target.y);
     c->pitch += angle;
     log_debug("PITCH %f", c->pitch);
 }
@@ -40,7 +42,9 @@ static inline void add_pitch(camera_t *c, float angle)
 static inline void add_yaw(camera_t *c, float angle)
 {
     vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
+    log_debug("OLD TARGET BEFORE YAW %f %f", c->target.x, c->target.y);
     c->target = sum3f(y_axis_rot(look_at_vec, angle), c->pos);
+    log_debug("TARGET AFTER YAW %f %f", c->target.x, c->target.y);
     c->yaw += angle;
     log_debug("YAW %f", c->yaw);
 }
@@ -53,6 +57,56 @@ static inline void add_roll(camera_t *c, float angle)
     c->roll += angle;
 }
 
+/* Move camera to by vector delta, taking into account camera target.
+   Uses world space coordinates.
+ */
+static inline void move_camera_abs(camera_t *c, vec3f delta)
+{
+    if (length3f(delta) > epsilon)
+    {
+      if (!c->targeted)
+        c->target = sum3f(c->target, delta);
+      
+      c->pos = sum3f(c->pos, delta);      
+    }
+}
+
+/* Move camera to by vector delta, taking into account camera target.
+   Uses relative space coordinates.
+ */
+static inline void move_camera_rel(camera_t *c, vec3f delta)
+{
+    vec3f abs_delta = z_axis_rot(y_axis_rot(x_axis_rot(delta, c->pitch), c->yaw), c->roll);
+    move_camera_abs(c, abs_delta);    
+}
+
+/* Convenience function */
+
+typedef enum { WORLD, SELF } coord_system_t;
+
+static inline void move_camera_by(camera_t *c, vec3f delta, coord_system_t coord_system)
+{
+    if (coord_system == WORLD)
+      move_camera_abs(c, delta);
+    else if (coord_system == SELF)
+      move_camera_rel(c, delta);
+}
+
+/* Teleport camera to by vector objetive, taking into account camera target.
+   NOTE: This is identical to move_camera_abs(new_pos - pos) at the moment, but we might
+   change this in the future if we want additional logic to run on teleports */
+static inline void move_camera_to(camera_t *c, vec3f new_pos)
+{
+    vec3f delta = diff3f(new_pos, c->pos);
+
+    if (length3f(delta) > epsilon)
+    {
+      if (!c->targeted)
+        c->target = sum3f(c->target, delta);
+
+      c->pos = new_pos;
+    }
+}
 
 /* TODO: Maybe define typedefs or additional functions if we want
    row-major versions of proj/view matrices */
