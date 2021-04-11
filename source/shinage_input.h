@@ -92,16 +92,12 @@ typedef struct {
 uint8_t modifier_keys = 0;
 char mod_key_str[64];
 
-/* NOTE: For performance reasons we want to access these as pointers and swap them around
-   each frame instead of accessing them directly. Henceforth the _ prefix */   
-
 player_input_t _curr_frame_input[MAX_PLAYERS]; 
 player_input_t _last_frame_input[MAX_PLAYERS];
-player_input_t _next_frame_input[MAX_PLAYERS];
 
 player_input_t *curr_frame_input = &_curr_frame_input[0];
 player_input_t *last_frame_input = &_last_frame_input[0];
-player_input_t *next_frame_input = &_next_frame_input[0];
+
 
 const player_input_t empty_player_input = {};
 
@@ -147,7 +143,7 @@ static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
 
 /* Sets the current state of input struct in the present frame based on its current state
    and its history. */
-void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input_t *next_input, int curr_state, double curr_timestamp)
+void set_input_state(key_input_t *curr_input, key_input_t *last_input, int curr_state, double curr_timestamp)
 {
     if (curr_state == PRESSED)
     {
@@ -157,17 +153,11 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
             /* NOTE: We only change timestamp here. We're only interested in the moment of the initial activation */
             curr_input->state = JUST_PRESSED;
             curr_input->stamp = curr_timestamp;
-            next_input->state = HOLDING;
-            next_input->stamp = curr_timestamp;
-            log_debug("case 1");
         }
         /* Case 2: The key is pressed now, and it was already being pressed */
         else
         {
-            log_debug("case 2");
             curr_input->state = HOLDING;
-            next_input->state = HOLDING;
-            next_input->stamp = curr_input->stamp;
         }
     }
 
@@ -178,9 +168,6 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
         if (last_input->state & PRESSED)
         {
             curr_input->state = JUST_RELEASED;
-            next_input->state = UNPRESSED;
-            next_input->stamp = curr_input->stamp;
-            log_debug("case 3");
         }
         /* Case 4: the key is not being pressed, and it stopped being pressed
            just the frame before. */
@@ -188,25 +175,26 @@ void set_input_state(key_input_t *curr_input, key_input_t *last_input, key_input
         else if (last_input->state & JUST_RELEASED)
         {
             curr_input->state = UNPRESSED;
-            next_input->state = UNPRESSED;
-            next_input->stamp = curr_input->stamp;
-            log_debug("case 4");
         }
     }
 }
 
-/* HACK: See player_input_t above. When we swap current and future input
-   we have to visit our key records and delete any JUST_PRESSED entries
-   to make sure we don't loop between HOLDING and JUST_PRESSED states in the
-   absence of a X11 input event.
-   
-   This is *very* prone to breaking from changes in the input system */
+/* HACK: See player_input_t above. At the start of each frame
+   and before the X11 event processing we have to visit all our
+   key records and delete any JUST_X entries to make sure we
+   don't loop between states in the absence of a X11 input event. */
+
 static inline void consume_first_presses(player_input_t *p)
 {
     int nrecords = sizeof(p->key_records)/sizeof(p->key_records[0]);
     for (int i = 0; i < nrecords; ++i)
+    {
         if (p->key_records[i].state == JUST_PRESSED)
             p->key_records[i].state = HOLDING;
+        
+        if (p->key_records[i].state == JUST_RELEASED)
+            p->key_records[i].state = UNPRESSED;
+    }
 }
 
 /* Inline functions to query the current state of a key. 

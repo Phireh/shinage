@@ -191,16 +191,11 @@ int main(int argc, char *argv[])
   {
       
       /* NOTE: The basic input handling loop is as follows:
-         We mantain 3 different structures: the last frame, current frame, and next frame inputs.
-         The first two allow us to know when a key is being held down or changing state, and
-         the last one is used to set up in advance the transition of keys from the state
-         JUST_RELEASED to UNPRESSED without fiddling with extra X11 commands.
+         We mantain 2 different structures: the last frame, and current frame inputs.
          
-         On the start of each frame loop we swap the current and next input pointers, so we can
-         transparently use the predicted values. The function set_input_state is used to fill all three
-         structures for each keypress.
-
-         An additional timestamp is added with the last time a given key was pressed.
+         Each frame we copy the last recorded input, then use the function
+         consume_first_presses to make the sure keys are only in JUST_RELEASED/PRESSED
+         states for a single frame.                  
       */
 
       double input_phase_stamp = get_current_time();
@@ -213,13 +208,6 @@ int main(int argc, char *argv[])
       
       player_input_t *player1_input = &curr_frame_input[PLAYER_1];
       player_input_t *player1_last_input = &last_frame_input[PLAYER_1];
-      player_input_t *player1_next_input = &next_frame_input[PLAYER_1];
-
-      /* Do the swap-aroo with future and present inputs */
-      /* TODO: Make this for other players, too! */
-      player_input_t *tmp_pointer = player1_input;      
-      player1_input = player1_next_input;
-      player1_next_input = tmp_pointer;
 
       /* HACK: We are just starting a frame, so there can be no JUST_PRESSED
          buttons just yet. Clean all of them for all active players */
@@ -272,7 +260,6 @@ int main(int argc, char *argv[])
               case XK_w:
                   set_input_state(&player1_input->forward,
                                   &player1_last_input->forward,
-                                  &player1_next_input->forward,
                                   PRESSED,
                                   input_phase_stamp);
                   break;
@@ -280,7 +267,6 @@ int main(int argc, char *argv[])
               case XK_s:
                   set_input_state(&player1_input->back,
                                   &player1_last_input->back,
-                                  &player1_next_input->back,
                                   PRESSED,
                                   input_phase_stamp);
                   break;
@@ -288,7 +274,6 @@ int main(int argc, char *argv[])
               case XK_a:
                   set_input_state(&player1_input->left,
                                   &player1_last_input->left,
-                                  &player1_next_input->left,
                                   PRESSED,
                                   input_phase_stamp);
                   break;
@@ -296,7 +281,6 @@ int main(int argc, char *argv[])
               case XK_d: 
                   set_input_state(&player1_input->right,
                                   &player1_last_input->right,
-                                  &player1_next_input->right,
                                   PRESSED,
                                   input_phase_stamp);                 
                   break;
@@ -304,7 +288,6 @@ int main(int argc, char *argv[])
               case XK_r:
                   set_input_state(&player1_input->up,
                                   &player1_last_input->up,
-                                  &player1_next_input->up,
                                   PRESSED,
                                   input_phase_stamp);                 
                   break;
@@ -312,7 +295,6 @@ int main(int argc, char *argv[])
               case XK_f:
                   set_input_state(&player1_input->down,
                                   &player1_last_input->down,
-                                  &player1_next_input->down,
                                   PRESSED,
                                   input_phase_stamp);
               }
@@ -339,7 +321,6 @@ int main(int argc, char *argv[])
               case XK_w:
                   set_input_state(&player1_input->forward,
                                   &player1_last_input->forward,
-                                  &player1_next_input->forward,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -347,7 +328,6 @@ int main(int argc, char *argv[])
               case XK_s:
                   set_input_state(&player1_input->back,
                                   &player1_last_input->back,
-                                  &player1_next_input->back,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -355,7 +335,6 @@ int main(int argc, char *argv[])
               case XK_a:
                   set_input_state(&player1_input->left,
                                   &player1_last_input->left,
-                                  &player1_next_input->left,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -363,7 +342,6 @@ int main(int argc, char *argv[])
               case XK_d:
                   set_input_state(&player1_input->right,
                                   &player1_last_input->right,
-                                  &player1_next_input->right,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -371,7 +349,6 @@ int main(int argc, char *argv[])
               case XK_r:
                   set_input_state(&player1_input->up,
                                   &player1_last_input->up,
-                                  &player1_next_input->up,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -379,7 +356,6 @@ int main(int argc, char *argv[])
               case XK_f:
                   set_input_state(&player1_input->down,
                                   &player1_last_input->down,
-                                  &player1_next_input->down,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -396,7 +372,6 @@ int main(int argc, char *argv[])
               case LEFT_MOUSE_BUTTON:
                   set_input_state(&player1_input->mouse_left_click,
                                   &player1_last_input->mouse_left_click,
-                                  &player1_next_input->mouse_left_click,
                                   PRESSED,
                                   input_phase_stamp);
                   break;
@@ -405,7 +380,6 @@ int main(int argc, char *argv[])
               case RIGHT_MOUSE_BUTTON:
                   set_input_state(&player1_input->mouse_right_click,
                                   &player1_last_input->mouse_right_click,
-                                  &player1_next_input->mouse_right_click,
                                   PRESSED,
                                   input_phase_stamp);                  
                   break;
@@ -432,7 +406,6 @@ int main(int argc, char *argv[])
               case LEFT_MOUSE_BUTTON:
                   set_input_state(&player1_input->mouse_left_click,
                                   &player1_last_input->mouse_left_click,
-                                  &player1_next_input->mouse_left_click,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -441,7 +414,6 @@ int main(int argc, char *argv[])
               case RIGHT_MOUSE_BUTTON:
                   set_input_state(&player1_input->mouse_right_click,
                                   &player1_last_input->mouse_right_click,
-                                  &player1_next_input->mouse_right_click,
                                   UNPRESSED,
                                   input_phase_stamp);
                   break;
@@ -468,10 +440,6 @@ int main(int argc, char *argv[])
               /* Store the new ones */
               player1_input->cursor_x = x;
               player1_input->cursor_y = y;
-
-              /* Store them for the next frame, too */
-              player1_next_input->cursor_x = x;
-              player1_next_input->cursor_y = y;
               
               log_debug("Moved pointer to (%d,%d)", x, y);
           } break;
@@ -765,8 +733,8 @@ void test_entity_logic(player_input_t *input, entity_t *e)
     bool back    = is_pressed(input->back);
     bool up      = is_pressed(input->up);
     bool down    = is_pressed(input->down);
-    int mouse_x = input->cursor_x_delta;
-    int mouse_y = input->cursor_y_delta;
+    int  mouse_x = input->cursor_x_delta;
+    int  mouse_y = input->cursor_y_delta;
 
     if (is_just_pressed(input->mouse_right_click))
     {
