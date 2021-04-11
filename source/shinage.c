@@ -736,47 +736,22 @@ void test_entity_logic(player_input_t *input, entity_t *e)
     int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;
 
-    if (is_just_pressed(input->mouse_right_click))
-    {
-
-        main_camera.targeted = !main_camera.targeted;
-    }
     if (right || left || forward || back || up || down || mouse_x || mouse_y)
     {
 
-        log_debug("============ FRAME %d ============", framecount);
-        if (input->ctrl)
-        {
-            main_camera.pos.x += right * 0.1f - left * 0.1f;      // x offset
-            main_camera.pos.y += up * 0.1f - down * 0.1f;         // y offset
-            main_camera.pos.z += forward * 0.1f - back * 0.1f;    // z offset
-        }
-        else if (input->shift)
-        {
-            if (main_camera.targeted)
-            {
-                vec3f new_target = {
-                  .x = main_camera.target.x + right * 0.1f - left * 0.1f,
-                  .y = main_camera.target.y + up * 0.1f - down * 0.1f,
-                  .z = main_camera.target.z + forward * 0.1f - back * 0.1f
-                };
-                look_at(&main_camera, new_target);
-            }
-            else
-            {
-                add_yaw(&main_camera, (float)mouse_x);
-                add_pitch(&main_camera, (float)mouse_y);
-            }                
-        }
-        else
-        {
-            move_entity(e,
-                        right * 0.1f - left * 0.1f,     // x offset
-                        up * 0.1f - down * 0.1f,        // y offset
-                        forward * 0.1f - back * 0.1f);  // z offset
-            
-              //main_camera.target = test_triangle.position;
-        }
+        main_camera.pos.x += right * 0.1f - left * 0.1f;      // x offset
+        main_camera.pos.y += up * 0.1f - down * 0.1f;         // y offset
+        main_camera.pos.z += forward * 0.1f - back * 0.1f;    // z offset
+
+
+        add_yaw(&main_camera, (float)mouse_x);
+        add_pitch(&main_camera, (float)mouse_y);
+        
+
+
+
+
+        
                log_debug("CAMERA TARGETED %d POS %.1f %.1f %.1f\nLOOKING AT %.1f %.1f %.1f\nENTITY POS %.1f %.1f %.1f", main_camera.targeted, main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, main_camera.target.x, main_camera.target.y, main_camera.target.z, e->position.x, e->position.y, e->position.z);
         mat4x4f vmatrix = view_matrix(main_camera);
         log_debug("VIEW MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
