@@ -195,6 +195,7 @@ static inline float get_delta_time()
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
 void draw_gl_triangle(void);
 void draw_gl_pyramid(void);
+void draw_gl_cube(void);
 int link_gl_functions(void);
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
 unsigned int build_shader(char *source, int type);

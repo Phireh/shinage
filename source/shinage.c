@@ -492,7 +492,8 @@ int main(int argc, char *argv[])
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       
         //draw_gl_triangle();
-      draw_gl_pyramid();
+      //draw_gl_pyramid();
+      draw_gl_cube();
       glXSwapBuffers(x11_display, x11_window);
 
 
@@ -613,7 +614,7 @@ void draw_gl_pyramid(void)
     uint num_indices = 12;
     uint indices[] =
       {
-        3,1,2, 0,1,2, 0,3,2, 0,2,3
+        3,1,2, 0,1,2, 0,3,1, 0,2,3
       };
     
     static unsigned int pyramid_program = 0;
@@ -677,7 +678,97 @@ void draw_gl_pyramid(void)
 
 }
 
+void draw_gl_cube(void)
+{
+    float vertices[] = {
+       0.5f,   0.5f,   0.5f,
+       0.5f,   0.5f,   -0.5f,
+       -0.5f,  0.5f,   -0.5f,
+       -0.5f,  0.5f,   0.5f,
+       0.5f,   -0.5f,  0.5f,
+       0.5f,   -0.5f,  -0.5f,
+       -0.5f,  -0.5f,  -0.5f,
+       -0.5f,  -0.5f,  0.5f,
+    };
 
+    float colours[] = {
+      0.78f,   0.78f,   0.78f,
+      0.78f,   0.78f,   0.78f,
+      0.78f,   0.78f,   0.78f,
+      0.78f,   0.78f,   0.78f,
+      0.22f,   0.22f,   0.22f,
+      0.22f,   0.22f,   0.22f,
+      0.22f,   0.22f,   0.22f,
+      0.22f,   0.22f,   0.22f
+    };
+
+    uint num_indices = 36;
+    uint indices[] =
+      {
+        0,1,3, 1,2,3, 1,5,2, 5,6,2, 4,5,0, 5,1,0,
+        3,2,7, 2,6,7, 4,0,7, 0,3,7, 5,4,6, 4,7,6
+      };
+    
+    static unsigned int pyramid_program = 0;
+    if (!pyramid_program)
+        pyramid_program = make_gl_program(pyramid_vertex_shader, pyramid_fragment_shader);
+    glUseProgram(pyramid_program);
+
+    static int translation_uniform_pos = -1;
+    if (translation_uniform_pos == -1)
+        translation_uniform_pos = glGetUniformLocation(pyramid_program, "translation");
+
+    static int vmatrix_uniform_pos = -1;
+    if (vmatrix_uniform_pos == -1)
+        vmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "viewMatrix");
+
+    static int pmatrix_uniform_pos = -1;
+    if (pmatrix_uniform_pos == -1)
+        pmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "projMatrix");
+
+    mat4x4f vmatrix = view_matrix(main_camera);
+    mat4x4f pmatrix = proj_matrix(main_camera);
+    
+
+    glUniform3f(translation_uniform_pos, test_pyramid.position.x, test_pyramid.position.y, test_pyramid.position.z);
+
+    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
+    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
+    
+    static unsigned int vao = 0;
+    if (!vao)
+      glGenVertexArrays(1, &vao);
+    
+    glBindVertexArray(vao);
+    
+    static unsigned int position_bo = 0;
+    if (!position_bo)
+      glGenBuffers(1, &position_bo);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, position_bo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    static unsigned int colour_bo = 0;
+    if (!colour_bo)
+      glGenBuffers(1, &colour_bo);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(1);
+
+    static unsigned int element_bo = 0;
+    if (!element_bo)
+      glGenBuffers(1, &element_bo);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
+
+    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
+
+}
 
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source)
 {
