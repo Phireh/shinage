@@ -748,22 +748,24 @@ void test_entity_logic(player_input_t *input, entity_t *e)
         main_camera.yaw = 0.0f;
         main_camera.pitch = 0.0f;
         main_camera.roll = 0.0f;
+        main_camera.fov = 30.0f;
     }
 
     if (right || left || forward || back || up || down || mouse_x || mouse_y)
     {
         vec3f move_vector = {
-          .x = right * 0.1f - left * 0.1f,      // x offset
-          .y = up * 0.1f - down * 0.1f,         // y offset
-          .z = forward * 0.1f - back * 0.1f     // z offset
+            .x = 0.0f,
+            .y = 0.0f,
+            .z = forward * 1.0f - back * 1.0f
         };
 
-        log_debug("MOVE VEC %f %f %f", move_vector.x, move_vector.y, move_vector.z);
+        //log_debug("MOVE VEC %f %f %f", move_vector.x, move_vector.y, move_vector.z);
 
         move_camera_by(&main_camera, move_vector, SELF);
 
-        add_yaw(&main_camera, (float)mouse_x);
-        add_pitch(&main_camera, (float)mouse_y);
+        add_yaw(&main_camera, (float)right * 1.0f - (float)left * 1.0f);
+        add_pitch(&main_camera, (float)up * 1.0f - (float)down * 1.0f);
+        
         
 
 

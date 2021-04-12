@@ -184,6 +184,12 @@ static inline vec3f normalize3f(vec3f vec)
     return vec;
 }
 
+/* Special clamp to keep degrees between [0,360] but wrapping the values around */
+static inline float clamp_deg(float angle)
+{
+  return angle > 360.0f ? angle - 360.0f : angle < 0.0f ? angle + 360.0f : angle;
+}
+
 /* Rotate vector v by d degrees around the X axis (pitch) */
 static inline vec3f x_axis_rot(vec3f v, float d)
 {

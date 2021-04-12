@@ -30,22 +30,18 @@ static inline void look_at(camera_t *c, vec3f t)
 /* Increment the pitch (rotation around X axis) of camera c by an angle in degrees */
 static inline void add_pitch(camera_t *c, float angle)
 {
-    vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
-    log_debug("OLD TARGET BEFORE PITCH %f %f", c->target.x, c->target.y);
+    vec3f look_at_vec = (diff3f(c->target, c->pos));
     c->target = sum3f(x_axis_rot(look_at_vec, angle), c->pos);
-    log_debug("TARGET AFTER PITCH %f %f", c->target.x, c->target.y);
-    c->pitch += angle;
+    c->pitch = clamp_deg(c->pitch + angle);
     log_debug("PITCH %f", c->pitch);
 }
 
 /* Increment the yaw (rotation around Y axis) of camera c by an angle in degrees */
 static inline void add_yaw(camera_t *c, float angle)
 {
-    vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
-    log_debug("OLD TARGET BEFORE YAW %f %f", c->target.x, c->target.y);
+    vec3f look_at_vec = (diff3f(c->target, c->pos));
     c->target = sum3f(y_axis_rot(look_at_vec, angle), c->pos);
-    log_debug("TARGET AFTER YAW %f %f", c->target.x, c->target.y);
-    c->yaw += angle;
+    c->yaw = clamp_deg(c->yaw + angle);
     log_debug("YAW %f", c->yaw);
 }
 
@@ -54,7 +50,7 @@ static inline void add_roll(camera_t *c, float angle)
 {
     vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
     c->target = sum3f(z_axis_rot(look_at_vec, angle), c->pos);
-    c->roll += angle;
+    c->roll = clamp_deg(c->roll + angle);
 }
 
 /* Move camera to by vector delta, taking into account camera target.
@@ -76,7 +72,30 @@ static inline void move_camera_abs(camera_t *c, vec3f delta)
  */
 static inline void move_camera_rel(camera_t *c, vec3f delta)
 {
-    vec3f abs_delta = z_axis_rot(y_axis_rot(x_axis_rot(delta, c->pitch), c->yaw), c->roll);
+    //vec3f abs_delta = z_axis_rot(y_axis_rot(x_axis_rot(delta, c->pitch), c->yaw), c->roll);
+    vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
+    //float magnitude = length3f(delta);
+ 
+    float alpha = acos(look_at_vec.z);   // rotation in the X axis
+    float beta  = acos(look_at_vec.x);   // rotation in the Y axis
+    float gamma = acos(look_at_vec.y);   // rotation in the Z axis
+
+    
+    log_debug("BETA (YAW) %f", rad_to_deg(beta));
+    log_debug("ALPHA (PITCH) %f", rad_to_deg(alpha));
+    log_debug("GAMMA (ROLL) %f", rad_to_deg(gamma));
+    mat3x3f rot_matrix = {
+        .a1 = cos(beta)*cos(gamma), .b1 = cos(gamma)*sin(alpha)*sin(beta) - cos(alpha)*sin(gamma), .c1 = cos(alpha)*cos(gamma)*sin(beta) + sin(alpha)*sin(gamma),
+        .a2 = cos(beta)*sin(gamma), .b2 = cos(alpha)*cos(gamma)+sin(alpha)*sin(beta)*sin(gamma),   .c2 = cos(alpha)*sin(beta)*sin(gamma) - cos(gamma)*sin(alpha),
+        .a3 = -sin(beta),           .b3 = cos(beta)*sin(alpha),                                    .c3 = cos(alpha)*cos(beta)
+    };
+ 
+    /* Multiplying by hand, refactor this later */
+    vec3f abs_delta = {
+        .x = delta.x * rot_matrix.a1 + delta.y * rot_matrix.a2 + delta.z * rot_matrix.a3,
+        .y = delta.x * rot_matrix.b1 + delta.y * rot_matrix.b2 + delta.z * rot_matrix.b3,
+        .z = delta.x * rot_matrix.c1 + delta.y * rot_matrix.c2 + delta.z * rot_matrix.c3
+    };
     move_camera_abs(c, abs_delta);    
 }
 
