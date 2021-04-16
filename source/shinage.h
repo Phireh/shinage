@@ -57,16 +57,6 @@ unsigned int x11_window_border_size = 1;
 int framecount = 0;
 entity_t test_triangle;
 entity_t test_pyramid;
-camera_t main_camera = {
-    .pos = { .x = 0.0f, .y = 0.0f, .z = -1.0f },
-    .target = { .x = 0.0f, .y = 0.0f, .z = 0.0f },
-    .fov = 90.0f,
-    .up = { .x = 0.0f, .y = 1.0f, .z = 0.0f },
-    .near = 0.01f,
-    .far = 10.0f,
-    .viewport_w = 320,
-    .viewport_h = 200
-};
 
 
 /* OpenGL defines */
@@ -102,42 +92,20 @@ PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
 /* OpenGL globals */
 GLXContext glx_context;
 
-char *test_vertex_shader =
-    "#version 150\n"      \
-    "in vec2 position;\n" \
-    "uniform vec3 translation;\n" \
-    "uniform mat4 viewMatrix;\n"  \
-    "uniform mat4 projMatrix;\n"  \
-    "void main() {\n" \
-    "mat4 modelMatrix = mat4(1.0);\n"
-    "modelMatrix[3] = vec4(translation, 1.0);"
-    "gl_Position = projMatrix*viewMatrix*modelMatrix*vec4(position, 0.0, 1.0);\n" \
-    "}";
-
-char *test_fragment_shader =
-    "#version 150\n" \
-    "out vec4 out_color;\n" \
-    "void main() {\n" \
-    "out_color = vec4(1.0, 1.0, 1.0, 1.0);\n" \
-    "}";
-
-
-char *pyramid_vertex_shader =
+char *cube_vertex_shader =
     "#version 150\n"      \
     "in vec3 position;\n" \
     "in vec3 vColor;\n" \
     "out vec3 fColor;\n" \
-    "uniform vec3 translation;\n" \
+    "uniform mat4 modelMatrix;\n"  \
     "uniform mat4 viewMatrix;\n"  \
     "uniform mat4 projMatrix;\n"  \
     "void main() {\n" \
-    "mat4 modelMatrix = mat4(1.0);\n" \
-    "modelMatrix[3] = vec4(translation, 1.0);\n" \
     "gl_Position = projMatrix*viewMatrix*modelMatrix*vec4(position, 1.0);\n" \
     "fColor = vColor;\n" \
     "}";
 
-char *pyramid_fragment_shader =
+char *cube_fragment_shader =
     "#version 150\n" \
     "out vec4 out_color;\n" \
     "in vec3 fColor;\n" \
@@ -200,5 +168,7 @@ int link_gl_functions(void);
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
 unsigned int build_shader(char *source, int type);
 void test_entity_logic(player_input_t *input, entity_t *e);
+void test_cube_logic(player_input_t *input, entity_t *e);
+void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);
 
 #endif

@@ -2,186 +2,232 @@
 #define SHINAGE_CAMERA_H
 #include "shinage_math.h"
 #include "shinage_debug.h"
+#include "shinage_stack_structures.h"
 
-/* TODO: Check if operations on this struct are more performant when passed as reference
-   instead of doing it by value */
-typedef struct {
-    vec3f pos;
-    vec3f target;
-    vec3f up;
-    // TODO: Do we really need yaw and pitch? Only roll seems necessary
-    float yaw;
-    float pitch;
-    float roll;
-    float fov;
-    float near;
-    float far;
-    unsigned int viewport_w;
-    unsigned int viewport_h;
-    bool targeted;
-} camera_t;
+typedef enum { MODEL, VIEW, PROJECTION } matrix_t;
 
-/* Points the specified camera toward the target position */
-static inline void look_at(camera_t *c, vec3f t)
+typedef struct
 {
-    c->target = t;
+    matrix_stack_t *model;
+    matrix_stack_t *view;
+    matrix_stack_t *projection; 
+} gl_matrices_t;
+
+gl_matrices_t mats;
+matrix_stack_t *active_mat;
+
+void build_matrices()
+{
+    mats.model = build_stack(10);
+    push(mats.model, identity_matrix_4x4);
+    mats.view = build_stack(10);
+    push(mats.view, identity_matrix_4x4);
+    mats.projection = build_stack(10);
+    push(mats.projection, identity_matrix_4x4);
 }
 
-/* Increment the pitch (rotation around X axis) of camera c by an angle in degrees */
-static inline void add_pitch(camera_t *c, float angle)
+/*
+*   Sets the target for the camera.
+*   NOTE: The up vector is the subjective vertical. Rotation arround the w vector. It has to be perpendicular to the look vector
+*   Modifies the VIEW matrix.
+*/
+void look_at(vec3f e, vec3f poi, vec3f up)
 {
-    vec3f look_at_vec = (diff3f(c->target, c->pos));
-    c->target = sum3f(x_axis_rot(look_at_vec, angle), c->pos);
-    c->pitch = clamp_deg(c->pitch + angle);
-    log_debug("PITCH %f", c->pitch);
+    vec3f look = normalize3f(diff3f(poi, e));
+    // The w is the vector with the same direction of the look vector, but contrary sense
+    vec3f w = diff3f(zero_vec3f, look);
+    // The u vector is perpendicular to the plane formed by the up and the w vectors
+    vec3f u = normalize3f(cross_product3f(up, w));
+    // And the vector v is perpendicular to the plane formed by the w and u vectors
+    vec3f v = cross_product3f(w, u); // Both are already unitary vectors, no need to normallize
+    // Rotation to make the bases coincide (I guess xD)
+    mat4x4f mr = {
+        .a1 = u.x,  .b1 = u.y,  .c1 = u.z,  .d1 = 0.0f,
+        .a2 = v.x,  .b2 = v.y,  .c2 = v.z,  .d2 = 0.0f,
+        .a3 = w.x,  .b3 = w.y,  .c3 = w.z,  .d3 = 0.0f,
+        .a4 = 0.0f, .b4 = 0.0f, .c4 = 0.0f, .d4 = 1.0f
+    };
+    // Translation to make the origins coincide (I guess xD)
+    mat4x4f mt = {
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,  .d1 = -e.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,  .d2 = -e.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,  .d3 = -e.z,
+        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,  .d4 = 1.0f
+    };
+    mat4x4f vmatrix = mat4x4f_prod(mt, mr);
+    log_debug_matx4f(&vmatrix, "VIEW_MATRIX");
+    push(mats.view, vmatrix);
 }
 
-/* Increment the yaw (rotation around Y axis) of camera c by an angle in degrees */
-static inline void add_yaw(camera_t *c, float angle)
+/*
+*   Sets the camera projection as perspective
+*   Modifies the PROJECTION matrix
+*/
+void perspective_camera(float fovy, float ar, float near, float far)
 {
-    vec3f look_at_vec = (diff3f(c->target, c->pos));
-    c->target = sum3f(y_axis_rot(look_at_vec, angle), c->pos);
-    c->yaw = clamp_deg(c->yaw + angle);
-    log_debug("YAW %f", c->yaw);
-}
-
-/* Increment the roll (rotation around Z axis) of camera c by an angle in degrees */
-static inline void add_roll(camera_t *c, float angle)
-{
-    vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
-    c->target = sum3f(z_axis_rot(look_at_vec, angle), c->pos);
-    c->roll = clamp_deg(c->roll + angle);
-}
-
-/* Move camera to by vector delta, taking into account camera target.
-   Uses world space coordinates.
- */
-static inline void move_camera_abs(camera_t *c, vec3f delta)
-{
-    if (length3f(delta) > epsilon)
+    float D2R = M_PI / 180.0;
+    float y_scale = 1.0 / tan(D2R * fovy / 2);
+    float x_scale = y_scale / ar;
+    float nearmfar = near - far;
+    mat4x4f pmatrix =
     {
-      if (!c->targeted)
-        c->target = sum3f(c->target, delta);
-      
-      c->pos = sum3f(c->pos, delta);      
+        .a1 = x_scale,  .b1 = 0.0f,     .c1 = 0.0f,                     .d1 = 0.0f,
+        .a2 = 0.0f,     .b2 = y_scale,  .c2 = 0.0f,                     .d2 = 0.0f,
+        .a3 = 0.0f,     .b3 = 0.0f,     .c3 = (far + near) / nearmfar,  .d3 = -1.0,
+        .a4 = 0.0f,     .b4 = 0.0f,     .c4 = 2*far*near / nearmfar,    .d4 = 0.0f
+    };
+    push(mats.projection, pmatrix);
+}
+
+void set_mat(matrix_t mat)
+{
+    switch (mat)
+    {
+        case MODEL:
+            active_mat = mats.model;
+            break;
+        case VIEW:
+            active_mat = mats.view;
+            break;
+        case PROJECTION:
+            active_mat = mats.projection;
+            break;
+        default:
+            break;
     }
 }
 
-/* Move camera to by vector delta, taking into account camera target.
-   Uses relative space coordinates.
- */
-static inline void move_camera_rel(camera_t *c, vec3f delta)
+void translate_matrix(vec3f desp)
 {
-    //vec3f abs_delta = z_axis_rot(y_axis_rot(x_axis_rot(delta, c->pitch), c->yaw), c->roll);
-    vec3f look_at_vec = normalize3f(diff3f(c->target, c->pos));
-    //float magnitude = length3f(delta);
- 
-    float alpha = acos(look_at_vec.z);   // rotation in the X axis
-    float beta  = acos(look_at_vec.x);   // rotation in the Y axis
-    float gamma = acos(look_at_vec.y);   // rotation in the Z axis
-
+    if (!active_mat)
+        return;
     
-    log_debug("BETA (YAW) %f", rad_to_deg(beta));
-    log_debug("ALPHA (PITCH) %f", rad_to_deg(alpha));
-    log_debug("GAMMA (ROLL) %f", rad_to_deg(gamma));
-    mat3x3f rot_matrix = {
-        .a1 = cos(beta)*cos(gamma), .b1 = cos(gamma)*sin(alpha)*sin(beta) - cos(alpha)*sin(gamma), .c1 = cos(alpha)*cos(gamma)*sin(beta) + sin(alpha)*sin(gamma),
-        .a2 = cos(beta)*sin(gamma), .b2 = cos(alpha)*cos(gamma)+sin(alpha)*sin(beta)*sin(gamma),   .c2 = cos(alpha)*sin(beta)*sin(gamma) - cos(gamma)*sin(alpha),
-        .a3 = -sin(beta),           .b3 = cos(beta)*sin(alpha),                                    .c3 = cos(alpha)*cos(beta)
-    };
- 
-    /* Multiplying by hand, refactor this later */
-    vec3f abs_delta = {
-        .x = delta.x * rot_matrix.a1 + delta.y * rot_matrix.a2 + delta.z * rot_matrix.a3,
-        .y = delta.x * rot_matrix.b1 + delta.y * rot_matrix.b2 + delta.z * rot_matrix.b3,
-        .z = delta.x * rot_matrix.c1 + delta.y * rot_matrix.c2 + delta.z * rot_matrix.c3
-    };
-    move_camera_abs(c, abs_delta);    
-}
-
-/* Convenience function */
-
-typedef enum { WORLD, SELF } coord_system_t;
-
-static inline void move_camera_by(camera_t *c, vec3f delta, coord_system_t coord_system)
-{
-    if (coord_system == WORLD)
-      move_camera_abs(c, delta);
-    else if (coord_system == SELF)
-      move_camera_rel(c, delta);
-}
-
-/* Teleport camera to by vector objetive, taking into account camera target.
-   NOTE: This is identical to move_camera_abs(new_pos - pos) at the moment, but we might
-   change this in the future if we want additional logic to run on teleports */
-static inline void move_camera_to(camera_t *c, vec3f new_pos)
-{
-    vec3f delta = diff3f(new_pos, c->pos);
-
-    if (length3f(delta) > epsilon)
+    mat4x4f aux = pop(active_mat);
+    //log_debug_matx4f(&aux, "MODEL BEFORE TRANSLATION:");
+    mat4x4f translate_matrix =
     {
-      if (!c->targeted)
-        c->target = sum3f(c->target, delta);
-
-      c->pos = new_pos;
-    }
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  desp.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  desp.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  desp.z,
+        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
+    };
+    //aux = mat4x4f_prod(translate_matrix,  aux);
+    aux = mat4x4f_prod(aux, translate_matrix);
+    //log_debug_matx4f(&aux, "MODEL AFTER TRANSLATION:");
+    push(active_mat, aux);
 }
 
-/* TODO: Maybe define typedefs or additional functions if we want
-   row-major versions of proj/view matrices */
-
-/* Returns a projection matrix suitable for being passed as a OpenGL uniform.
-   NOTE: This matrix is built like a column-major one, and should *not* be transposed
-   with passing it to the GPU */
-static inline mat4x4f proj_matrix(camera_t camera)
+void scale_matrix(vec3f sc)
 {
-    /* TODO: Get better names for these */
-    float far = camera.far;
-    float near = camera.near;
-    float fn = far + near;
-    float nf = far - near;
-    float r = (float)camera.viewport_w / (float)camera.viewport_h;
-    float t = 1.0f / (tan(deg_to_rad(camera.fov) / 2.0f));
+    if (!active_mat)
+        return;
 
-
-    mat4x4f matrix = {
-        .a1 = t/r,  .b1 = 0.0f, .c1 = 0.0f,   .d1 =  0.0f,
-        .a2 = 0.0f, .b2 = t,    .c2 = 0.0f,   .d2 =  0.0f,
-        .a3 = 0.0f, .b3 = 0.0f, .c3 = -fn/nf, .d3 = -1.0f,
-        .a4 = 0.0f, .b4 = 0.0f, .c4 = -2.0 * far * near / nf, 0.0f
+    mat4x4f aux = pop(active_mat);
+    //log_debug_matx4f(&aux, "MODEL BEFORE SCALETION:");
+    mat4x4f scale_matrix =
+    {
+        .a1 = sc.x,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  0.0f,
+        .a2 = 0.0f,  .b2 = sc.y,  .c2 = 0.0f,   .d2 =  0.0f,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = sc.z,   .d3 =  0.0f,
+        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
-    return matrix;
+    aux = mat4x4f_prod(aux, scale_matrix);
+    //log_debug_matx4f(&aux, "MODEL AFTER SCALETION:");
+    push(active_mat, aux);
 }
 
-/* Returns a view matrix suitable for being passed as a OpenGL uniform.
-   NOTE: This matrix is built like a column-major one, and should *not* be transposed
-   with passing it to the GPU */
-static inline mat4x4f view_matrix(camera_t camera)
+void rotate_matrix(exe3f_t rot_exe, float angle)
 {
-    vec3f mz = { .x = camera.pos.x - camera.target.x,
-                 .y = camera.pos.y - camera.target.y,
-                 .z = camera.pos.z - camera.target.z
+    if (!active_mat)
+        return;
+
+    vec3f exe_pnt = rot_exe.pnt;
+    vec3f exe_vec = rot_exe.vec;
+
+    // If there is not a vector for reference, there is no rotation
+    if (!length3f(exe_vec))
+        return;
+
+    mat4x4f aux = pop(active_mat);
+
+    // The exe has to be translated to the origin
+    mat4x4f translation_matrix =
+    {
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  -exe_pnt.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  -exe_pnt.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -exe_pnt.z,
+        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
-    mz = normalize3f(mz);
-    vec3f my = camera.up;
-    vec3f mx = cross_product3f(my, mz);
-    mx = normalize3f(mx);
-    my = cross_product3f(mz, mx);
-    vec3f _mz = { .x = -mz.x, .y = -mz.y, .z = -mz.z };
-    vec4f last_row = {
-        .x = dot_product3f(mx, camera.pos),
-        .y = dot_product3f(my, camera.pos),
-        .z = dot_product3f(_mz, camera.pos),
-        .w = 1.0f
+    aux = mat4x4f_prod(aux, translation_matrix);
+    // This matrix will be used to unmake the translation
+    mat4x4f un_translation_matrix =
+    {
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  exe_pnt.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  exe_pnt.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  exe_pnt.z,
+        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
 
-    mat4x4f matrix = {
-        .a1 = mx.x, .b1 = my.x, .c1 = mz.x, .d1 = 0.0f,
-        .a2 = mx.y, .b2 = my.y, .c2 = mz.y, .d2 = 0.0f,
-        .a3 = mx.z, .b3 = my.z, .c3 = mz.z, .d3 = 0.0f,
-        .a4 = last_row.x, .b4 = last_row.y, .c4 = last_row.z, .d4 = last_row.w
+    // The exe is rotated to match one of the axis (X axis in this case)
+    // These are projections in their respectives planes
+    vec3f xy_aux = { .x = exe_vec.x, .y = exe_vec.y, .z = 0 };
+    vec3f xz_aux = { .x = exe_vec.x, .y = 0, .z = exe_vec.z };
+    // And these are the angles they form with the vec
+    float lon = get_angle3f(xz_aux, z_dir_vec3f);
+    if (lon < 1) // If there is no angle (zero vector involved)
+        lon = 0.0f;
+    float lat = get_angle3f(xy_aux, x_dir_vec3f);
+    if (lat < 1)
+        lat = 0.0f;
+
+    mat4x4f rotation_matrix_y =
+    {
+        .a1 = cos(lon),     .b1 = 0.0f,      .c1 = sin(lon),     .d1 =  0.0f,
+        .a2 = 0.0f,         .b2 = 1.0f,      .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = -sin(lon),    .b3 = 0.0f,      .c3 = cos(lon),     .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
     };
-    return matrix;
+    aux = mat4x4f_prod(aux, rotation_matrix_y);
+    mat4x4f un_rotation_matrix_y = 
+    {
+        .a1 = cos(-lon),    .b1 = 0.0f,      .c1 = sin(-lon),    .d1 =  0.0f,
+        .a2 = 0.0f,         .b2 = 1.0f,      .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = -sin(-lon),   .b3 = 0.0f,      .c3 = cos(-lon),    .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
+    };
+    // These matrices will be used to unmake the auxiliar rotations
+    mat4x4f rotation_matrix_z =
+    {
+        .a1 = cos(lat),    .b1 = -sin(lat),  .c1 = 0.0f,         .d1 =  0.0f,
+        .a2 = sin(lat),    .b2 = cos(lat) ,  .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = 0.0f,       .c3 = 1.0f,         .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,       .c4 = 0.0f,         .d4 =  1.0f
+    };
+    aux = mat4x4f_prod(aux, rotation_matrix_z);
+    mat4x4f un_rotation_matrix_z =
+    {
+        .a1 = cos(-lat),   .b1 = -sin(-lat),  .c1 = 0.0f,        .d1 =  0.0f,
+        .a2 = sin(-lat),   .b2 = cos(-lat) ,  .c2 = 0.0f,        .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = 0.0f,        .c3 = 1.0f,        .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
+    };
+    // With the newt rotations the exe will be overlapping the X axis, so the rotation
+    // will be performed arround it. This is the transformation that won't be undone
+    mat4x4f rotation_matrix_x =
+    {
+        .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
+        .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = sin(angle),  .c3 = cos(angle),  .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
+    };
+    aux = mat4x4f_prod(aux, rotation_matrix_x);
+
+    // The auxilliar transformations are unmade in reverse order
+    aux = mat4x4f_prod(aux, un_rotation_matrix_z);
+    aux = mat4x4f_prod(aux, un_rotation_matrix_y);
+    aux = mat4x4f_prod(aux, un_translation_matrix);
+
+    push(active_mat, aux);
 }
 
 #endif

@@ -398,9 +398,9 @@ int main(int argc, char *argv[])
           case ButtonRelease:
           {
               unsigned int button_pressed = ((XButtonEvent*)&x11_event)->button;
-              int x = ((XButtonEvent*)&x11_event)->x;
+              /*int x = ((XButtonEvent*)&x11_event)->x;
               int y = ((XButtonEvent*)&x11_event)->y;
-              log_debug("Released mouse button %d at coords (%d,%d)", button_pressed, x, y);
+              log_debug("Released mouse button %d at coords (%d,%d)", button_pressed, x, y);*/
               switch (button_pressed)
               {
               case LEFT_MOUSE_BUTTON:
@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
               player1_input->cursor_x = x;
               player1_input->cursor_y = y;
               
-              log_debug("Moved pointer to (%d,%d)", x, y);
+              //log_debug("Moved pointer to (%d,%d)", x, y);
           } break;
 
           case ClientMessage:
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
               if (x11_event.xclient.data.l[0] == (long int)wmDeleteMessage)
               {
                   main_loop_state = FINISHED;
-                  log_debug("Closing window by window manager's request");
+                  //log_debug("Closing window by window manager's request");
               }
               break;
 
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
               x11_window_height = x11_window_attr.height;
               /* Update glVierport coordinates to properly adjust to the new window size */
               glViewport(0, 0, x11_window_width, x11_window_height);
-              log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);              
+              //log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);              
               break;
           }
       }
@@ -477,12 +477,7 @@ int main(int argc, char *argv[])
       player1_input->cursor_y_delta = (int)player1_input->cursor_y - (int)player1_last_input->cursor_y;      
       
       /* Logic */
-      // Update camera aspect ratio if we got resized
-      main_camera.viewport_w = x11_window_width;
-      main_camera.viewport_h = x11_window_height;
-      
-        //      test_triangle_logic(player1_input);
-      test_entity_logic(player1_input, &test_pyramid);
+      test_cube_logic(player1_input, &test_pyramid);
 
       /* Rendering */
 
@@ -491,11 +486,28 @@ int main(int argc, char *argv[])
       glEnable(GL_DEPTH_TEST);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       
-        //draw_gl_triangle();
-      //draw_gl_pyramid();
+      if (!mats.model || !mats.view || !mats.projection)
+      {
+        build_matrices();
+        set_mat(MODEL);
+        /*float ar = (float)x11_window_width / (float)x11_window_height;
+        perspective_camera(90.0, ar, 0.01f, 100.0f);
+        vec3f eye = { .x = 0, .y = 0.0f, .z = -1.0f };
+        vec3f poi = { .x = 0, .y = 0, .z = 0 };
+        look_at(eye, poi, up_vector);
+        vec3f scale = { .x = 0.25, .y = 0.25, .z = 0.25 };
+        scale_matrix(scale);
+        vec3f translation = { .x = 0, .y = 0, .z = 0 };
+        translate_matrix(translation);*/
+      }
+      exe3f_t rot_exe =
+      { 
+        .vec = { .x = 0.0, .y = 0.0, .z = 1.0f },
+        .pnt = { .x = 0.0, .y =  0.0f, .z = 0.0f }
+      };
+      rotate_matrix(rot_exe, 0.025);
       draw_gl_cube();
       glXSwapBuffers(x11_display, x11_window);
-
 
       ++framecount;
   }
@@ -540,144 +552,7 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
     return 0;
 }
 
-
-void draw_gl_triangle(void)
-{
-    float vertices[] = {
-       -0.5f,  -0.5f,
-        0.5f,  -0.5f,
-        0.0f,   0.5f
-        
-    };
-    
-    static unsigned int triangle_program = 0;
-    if (!triangle_program)
-        triangle_program = make_gl_program(test_vertex_shader, test_fragment_shader);
-    glUseProgram(triangle_program);
-
-    static int translation_uniform_pos = -1;
-    if (translation_uniform_pos == -1)
-        translation_uniform_pos = glGetUniformLocation(triangle_program, "translation");
-
-    static int vmatrix_uniform_pos = -1;
-    if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(triangle_program, "viewMatrix");
-
-    static int pmatrix_uniform_pos = -1;
-    if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(triangle_program, "projMatrix");
-
-    mat4x4f vmatrix = view_matrix(main_camera);
-    mat4x4f pmatrix = proj_matrix(main_camera);
-    
-
-    glUniform3f(translation_uniform_pos, test_triangle.position.x, test_triangle.position.y, test_triangle.position.z);
-
-    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
-    
-    static unsigned int vao;
-    if (!vao)
-        glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    
-    static unsigned int vbo = 0;
-    if (!vbo)
-        glGenBuffers(1, &vbo);
-
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * sizeof(float), vertices, GL_STATIC_DRAW);
-    
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);
-    
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-}
-
-void draw_gl_pyramid(void)
-{
-    float vertices[] = {
-       0.0f,   0.43f,   0.0f,
-      -0.5f,  -0.43f,  -0.5f,
-       0.5f,  -0.43f,  -0.5f,
-       0.0f,  -0.43f,   0.5f 
-    };
-
-    float colours[] = {
-      1.0f,   1.0f,   1.0f,
-      1.0f,   0.0f,   0.0f,
-      0.0f,   1.0f,   0.0f,
-      0.0f,   0.0f,   1.0f  
-    };
-
-    uint num_indices = 12;
-    uint indices[] =
-      {
-        3,1,2, 0,1,2, 0,3,1, 0,2,3
-      };
-    
-    static unsigned int pyramid_program = 0;
-    if (!pyramid_program)
-        pyramid_program = make_gl_program(pyramid_vertex_shader, pyramid_fragment_shader);
-    glUseProgram(pyramid_program);
-
-    static int translation_uniform_pos = -1;
-    if (translation_uniform_pos == -1)
-        translation_uniform_pos = glGetUniformLocation(pyramid_program, "translation");
-
-    static int vmatrix_uniform_pos = -1;
-    if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "viewMatrix");
-
-    static int pmatrix_uniform_pos = -1;
-    if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "projMatrix");
-
-    mat4x4f vmatrix = view_matrix(main_camera);
-    mat4x4f pmatrix = proj_matrix(main_camera);
-    
-
-    glUniform3f(translation_uniform_pos, test_pyramid.position.x, test_pyramid.position.y, test_pyramid.position.z);
-
-    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
-    
-    static unsigned int vao = 0;
-    if (!vao)
-      glGenVertexArrays(1, &vao);
-    
-    glBindVertexArray(vao);
-    
-    static unsigned int position_bo = 0;
-    if (!position_bo)
-      glGenBuffers(1, &position_bo);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, position_bo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);
-
-    static unsigned int colour_bo = 0;
-    if (!colour_bo)
-      glGenBuffers(1, &colour_bo);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(1);
-
-    static unsigned int element_bo = 0;
-    if (!element_bo)
-      glGenBuffers(1, &element_bo);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
-
-    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
-
-}
-
+bool show_cpu_calculated_matrix;
 void draw_gl_cube(void)
 {
     float vertices[] = {
@@ -704,34 +579,34 @@ void draw_gl_cube(void)
 
     uint num_indices = 36;
     uint indices[] =
-      {
-        0,1,3, 1,2,3, 1,5,2, 5,6,2, 4,5,0, 5,1,0,
-        3,2,7, 2,6,7, 4,0,7, 0,3,7, 5,4,6, 4,7,6
-      };
+    {
+      0,1,3, 1,2,3, 1,5,2, 5,6,2, 4,5,0, 5,1,0,
+      3,2,7, 2,6,7, 4,0,7, 0,3,7, 5,4,6, 4,7,6
+    };
     
-    static unsigned int pyramid_program = 0;
-    if (!pyramid_program)
-        pyramid_program = make_gl_program(pyramid_vertex_shader, pyramid_fragment_shader);
-    glUseProgram(pyramid_program);
+    static unsigned int cube_program = 0;
+    if (!cube_program)
+        cube_program = make_gl_program(cube_vertex_shader, cube_fragment_shader);
+    glUseProgram(cube_program);
 
-    static int translation_uniform_pos = -1;
-    if (translation_uniform_pos == -1)
-        translation_uniform_pos = glGetUniformLocation(pyramid_program, "translation");
+    static int mmatrix_uniform_pos = -1;
+    if (mmatrix_uniform_pos == -1)
+        mmatrix_uniform_pos = glGetUniformLocation(cube_program, "modelMatrix");
 
     static int vmatrix_uniform_pos = -1;
     if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "viewMatrix");
+        vmatrix_uniform_pos = glGetUniformLocation(cube_program, "viewMatrix");
 
     static int pmatrix_uniform_pos = -1;
     if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "projMatrix");
+        pmatrix_uniform_pos = glGetUniformLocation(cube_program, "projMatrix");
 
-    mat4x4f vmatrix = view_matrix(main_camera);
-    mat4x4f pmatrix = proj_matrix(main_camera);
+
+    mat4x4f mmatrix = peek(mats.model);
+    mat4x4f vmatrix = peek(mats.view);
+    mat4x4f pmatrix = peek(mats.projection);
     
-
-    glUniform3f(translation_uniform_pos, test_pyramid.position.x, test_pyramid.position.y, test_pyramid.position.z);
-
+    glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_FALSE, mmatrix.v);
     glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
     glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
     
@@ -768,6 +643,43 @@ void draw_gl_cube(void)
 
     glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
 
+    if (show_cpu_calculated_matrix)
+    {
+      log_debug_cpu_computed_vertex_positions(vertices, 8, 3);
+      show_cpu_calculated_matrix = false;
+    }
+
+}
+
+void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims)
+{
+  mat4x4f mmatrix = peek(mats.model);
+  mat4x4f vmatrix = peek(mats.view);
+  mat4x4f pmatrix = peek(mats.projection);
+  uint i, j, k;
+  vec4f vs_ini[count];
+  vec4f vs_mod[count];
+  vec4f vs_vis[count];
+  vec4f vs_pro[count];
+  for (i = 0; i < count; i++)
+  {
+    vec4f v = zero_vec4f;
+    for (j = 0; j < dims; j++)
+      v.v[j] = vertices[i * dims + j];
+    for (k = j; k < 4; k++)
+      v.v[k] = 0.0f;
+    vs_ini[i] = v;
+    v = mat4x4f_vec4f_prod(mmatrix, v);
+    vs_mod[i] = v;
+    v = mat4x4f_vec4f_prod(vmatrix, v);
+    vs_vis[i] = v;
+    v = mat4x4f_vec4f_prod(pmatrix, v);
+    vs_pro[i] = v;
+  }
+  log_debug_vec4f(vs_ini, count, "OBJECT SPACE");
+  log_debug_vec4f(vs_mod, count, "WORLD SPACE");
+  log_debug_vec4f(vs_vis, count, "CAMERA SPACE");
+  log_debug_vec4f(vs_pro, count, "SCREEN SPACE");
 }
 
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source)
@@ -815,70 +727,26 @@ unsigned int build_shader(char *source, int type)
     return shader;
 }
 
-/* Temp function to mess around with input and position control */
-void test_entity_logic(player_input_t *input, entity_t *e)
+void test_cube_logic(player_input_t *input, entity_t *e)
 {
     bool right   = is_pressed(input->right);
-    bool left    = is_pressed(input->left);
+    /*bool left    = is_pressed(input->left);
     bool forward = is_pressed(input->forward);
     bool back    = is_pressed(input->back);
     bool up      = is_pressed(input->up);
     bool down    = is_pressed(input->down);
     int  mouse_x = input->cursor_x_delta;
-    int  mouse_y = input->cursor_y_delta;
-    bool reset   = is_just_pressed(input->mouse_left_click);
-
-    if (reset)
+    int  mouse_y = input->cursor_y_delta;*/
+    bool right_click   = is_just_pressed(input->mouse_left_click);
+    if (right)
     {
-        main_camera.pos.x =  0.0f;
-        main_camera.pos.y =  0.0f;
-        main_camera.pos.z = -1.0f;
-        main_camera.target.x = 0.0f;
-        main_camera.target.y = 0.0f;
-        main_camera.target.z = 0.0f;
-        main_camera.yaw = 0.0f;
-        main_camera.pitch = 0.0f;
-        main_camera.roll = 0.0f;
-        main_camera.fov = 30.0f;
+      log_debug("Ye [%f]", e->position.x);
     }
-
-    if (right || left || forward || back || up || down || mouse_x || mouse_y)
+    if (right_click)
     {
-        vec3f move_vector = {
-            .x = 0.0f,
-            .y = 0.0f,
-            .z = forward * 1.0f - back * 1.0f
-        };
-
-        //log_debug("MOVE VEC %f %f %f", move_vector.x, move_vector.y, move_vector.z);
-
-        move_camera_by(&main_camera, move_vector, SELF);
-
-        add_yaw(&main_camera, (float)right * 1.0f - (float)left * 1.0f);
-        add_pitch(&main_camera, (float)up * 1.0f - (float)down * 1.0f);
-        
-        
-
-
-
-
-        
-               log_debug("CAMERA TARGETED %d POS %.1f %.1f %.1f\nLOOKING AT %.1f %.1f %.1f\nENTITY POS %.1f %.1f %.1f", main_camera.targeted, main_camera.pos.x, main_camera.pos.y, main_camera.pos.z, main_camera.target.x, main_camera.target.y, main_camera.target.z, e->position.x, e->position.y, e->position.z);
-        mat4x4f vmatrix = view_matrix(main_camera);
-        log_debug("VIEW MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
-                  vmatrix.a1, vmatrix.b1, vmatrix.c1, vmatrix.d1,
-                  vmatrix.a2, vmatrix.b2, vmatrix.c2, vmatrix.d2,
-                  vmatrix.a3, vmatrix.b3, vmatrix.c3, vmatrix.d3,
-                  vmatrix.a4, vmatrix.b4, vmatrix.c4, vmatrix.d4);
-
-                mat4x4f pmatrix = proj_matrix(main_camera);
-        log_debug("PROJ MAT\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
-                  pmatrix.a1, pmatrix.b1, pmatrix.c1, pmatrix.d1,
-                  pmatrix.a2, pmatrix.b2, pmatrix.c2, pmatrix.d2,
-                  pmatrix.a3, pmatrix.b3, pmatrix.c3, pmatrix.d3,
-                  pmatrix.a4, pmatrix.b4, pmatrix.c4, pmatrix.d4);
+      show_cpu_calculated_matrix = true;
     }
-};
+}
 
 int link_gl_functions(void)
 {
