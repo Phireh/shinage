@@ -33,6 +33,49 @@ void build_matrices()
 */
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
+   /* // The camera is brought to the origin
+    mat4x4f translation_matrix =
+    {
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  -e.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  -e.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -e.z,
+        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
+    };
+    // The LOOK vector is rotated so it overlaps with thee Z axis
+    vec3f look = normalize3f(diff3f(poi, e));
+    vec3f xz_aux = { .x = e.x, .y = 0, .z = e.z };
+    vec3f yz_aux = { .x = 0 .y = e.y, .z = e.z };
+    // And these are the angles they form with the vec
+    float alpha_ = get_angle3f(xz_aux, z_dir_vec3f);
+    float lat = get_angle3f(xy_aux, x_dir_vec3f);
+    // TODO: Error handling or logging
+    if (lon == -1)
+    {
+        lon = 0.0f;
+    }
+    if (lat == -1)
+    {
+        lat = 0.0f;
+    }
+    mat4x4f rotation_matrix_y =
+    {
+        .a1 = cos(lon),     .b1 = 0.0f,      .c1 = sin(lon),     .d1 =  0.0f,
+        .a2 = 0.0f,         .b2 = 1.0f,      .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = -sin(lon),    .b3 = 0.0f,      .c3 = cos(lon),     .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
+    };
+    mat4x4f rotation_matrix_x =
+    {
+        .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
+        .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = sin(angle),  .c3 = cos(angle),  .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
+    };*/
+
+
+
+
+
     vec3f look = normalize3f(diff3f(poi, e));
     // The w is the vector with the same direction of the look vector, but contrary sense
     vec3f w = diff3f(zero_vec3f, look);
@@ -186,51 +229,51 @@ void rotate_matrix(exe3f_t rot_exe, float angle)
         lat = 0.0f;
     }
 
-    mat4x4f rotation_matrix_y =
+    mat4x4f rotation_matrix_lon =
     {
-        .a1 = cos(lon),     .b1 = 0.0f,      .c1 = sin(lon),     .d1 =  0.0f,
+        .a1 = cos(-lon),     .b1 = 0.0f,      .c1 = sin(-lon),     .d1 =  0.0f,
         .a2 = 0.0f,         .b2 = 1.0f,      .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = -sin(lon),    .b3 = 0.0f,      .c3 = cos(lon),     .d3 =  0.0f,
+        .a3 = -sin(-lon),    .b3 = 0.0f,      .c3 = cos(-lon),     .d3 =  0.0f,
         .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, rotation_matrix_y);
-    mat4x4f un_rotation_matrix_y = 
+    aux = mat4x4f_prod(aux, rotation_matrix_lon);
+    mat4x4f un_rotation_matrix_lon = 
     {
-        .a1 = cos(-lon),    .b1 = 0.0f,      .c1 = sin(-lon),    .d1 =  0.0f,
+        .a1 = cos(lon),    .b1 = 0.0f,      .c1 = sin(lon),    .d1 =  0.0f,
         .a2 = 0.0f,         .b2 = 1.0f,      .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = -sin(-lon),   .b3 = 0.0f,      .c3 = cos(-lon),    .d3 =  0.0f,
+        .a3 = -sin(lon),   .b3 = 0.0f,      .c3 = cos(lon),    .d3 =  0.0f,
         .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
     };
     // These matrices will be used to unmake the auxiliar rotations
-    mat4x4f rotation_matrix_z =
+    mat4x4f rotation_matrix_lat =
     {
-        .a1 = cos(lat),    .b1 = -sin(lat),  .c1 = 0.0f,         .d1 =  0.0f,
-        .a2 = sin(lat),    .b2 = cos(lat) ,  .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = 0.0f,        .b3 = 0.0f,       .c3 = 1.0f,         .d3 =  0.0f,
-        .a4 = 0.0f,        .b4 = 0.0f,       .c4 = 0.0f,         .d4 =  1.0f
+        .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
+        .a2 = 0.0f,        .b2 = cos(-lat),  .c2 = -sin(-lat), .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = sin(-lat),  .c3 = cos(-lat),  .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, rotation_matrix_z);
-    mat4x4f un_rotation_matrix_z =
+    aux = mat4x4f_prod(aux, rotation_matrix_lat);
+    mat4x4f un_rotation_matrix_lat =
     {
-        .a1 = cos(-lat),   .b1 = -sin(-lat),  .c1 = 0.0f,        .d1 =  0.0f,
-        .a2 = sin(-lat),   .b2 = cos(-lat) ,  .c2 = 0.0f,        .d2 =  0.0f,
-        .a3 = 0.0f,        .b3 = 0.0f,        .c3 = 1.0f,        .d3 =  0.0f,
+        .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
+        .a2 = 0.0f,        .b2 = cos(lat),  .c2 = -sin(lat), .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = sin(lat),  .c3 = cos(lat),  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
     };
     // With the newt rotations the exe will be overlapping the X axis, so the rotation
     // will be performed arround it. This is the transformation that won't be undone
-    mat4x4f rotation_matrix_x =
+    mat4x4f rotation_matrix_around_z =
     {
-        .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
-        .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
-        .a3 = 0.0f,        .b3 = sin(angle),  .c3 = cos(angle),  .d3 =  0.0f,
-        .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
+        .a1 = cos(angle),    .b1 = -sin(angle),  .c1 = 0.0f,         .d1 =  0.0f,
+        .a2 = sin(angle),    .b2 = cos(angle) ,  .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = 0.0f,       .c3 = 1.0f,         .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,       .c4 = 0.0f,         .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, rotation_matrix_x);
+    aux = mat4x4f_prod(aux, rotation_matrix_around_z);
 
     // The auxilliar transformations are unmade in reverse order
-    aux = mat4x4f_prod(aux, un_rotation_matrix_z);
-    aux = mat4x4f_prod(aux, un_rotation_matrix_y);
+    aux = mat4x4f_prod(aux, un_rotation_matrix_lat);
+    aux = mat4x4f_prod(aux, un_rotation_matrix_lon);
     aux = mat4x4f_prod(aux, un_translation_matrix);
 
     push(active_mat, aux);

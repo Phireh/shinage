@@ -502,8 +502,8 @@ int main(int argc, char *argv[])
       }
       exe3f_t rot_exe =
       { 
-        .vec = { .x = 0.0, .y = 0.0, .z = 1.0f },
-        .pnt = { .x = 0.0, .y =  0.0f, .z = 0.0f }
+        .vec = { .x = 0.0f, .y = 0.0f, .z = 1.0f },
+        .pnt = { .x = 0.0f, .y =  0.0f, .z = 0.0f }
       };
       rotate_matrix(rot_exe, 0.025);
       draw_gl_cube();
