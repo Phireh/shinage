@@ -309,7 +309,7 @@ static inline vec4f mat4x4f_vec4f_prod(mat4x4f m, vec4f v)
   vec4f res = zero_vec4f;
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
-      res.v[i] += m.v[i * 4 + j] * v.v[i];
+      res.v[i] += m.v[i * 4 + j] * v.v[j];
   return res;
 }
 
@@ -321,14 +321,13 @@ static inline mat4x4f int_mat4x4f_prod(int i, mat4x4f m)
   return res;
 }
 
-static inline mat4x4f summat4x4f(mat4x4f m1, mat4x4f m2, bool substraction)
+static inline mat4x4f summat4x4f(mat4x4f m1, mat4x4f m2, bool subtraction)
 {
   mat4x4f res = m1;
+  int sign = subtraction == 0 ? 1 : -1;
   for (int i = 0; i < 16; i++)
-    if (substraction)
-      res.v[i] -= i * m2.v[i];
-    else
-      res.v[i] += i * m2.v[i];
+      res.v[i] += sign * m2.v[i];
+
   return res;
 }
 
