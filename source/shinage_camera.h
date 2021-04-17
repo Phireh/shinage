@@ -33,7 +33,8 @@ void build_matrices()
 */
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
-   /* // The camera is brought to the origin
+    mat4x4f vmatrix = identity_matrix_4x4;
+    // The camera is brought to the origin
     mat4x4f translation_matrix =
     {
         .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  -e.x,
@@ -41,13 +42,17 @@ void look_at(vec3f e, vec3f poi, vec3f up)
         .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -e.z,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
+    vmatrix = mat4x4f_prod(vmatrix, translation_matrix);
+
     // The LOOK vector is rotated so it overlaps with thee Z axis
     vec3f look = normalize3f(diff3f(poi, e));
-    vec3f xz_aux = { .x = e.x, .y = 0, .z = e.z };
-    vec3f yz_aux = { .x = 0 .y = e.y, .z = e.z };
+    // The referencial axis is rotated to match one of the cartessian axis (Z in this case)
+    // These are projections in their respectives planes
+    vec3f xy_look_aux = { .x = look.x, .y = look.y, .z = 0 };
+    vec3f xz_look_aux = { .x = look.x, .y = 0, .z = look.z };
     // And these are the angles they form with the vec
-    float alpha_ = get_angle3f(xz_aux, z_dir_vec3f);
-    float lat = get_angle3f(xy_aux, x_dir_vec3f);
+    float lon = get_angle3f(xz_look_aux, z_dir_vec3f);
+    float lat = get_angle3f(xy_look_aux, x_dir_vec3f);
     // TODO: Error handling or logging
     if (lon == -1)
     {
@@ -57,48 +62,35 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     {
         lat = 0.0f;
     }
-    mat4x4f rotation_matrix_y =
+    mat4x4f rotation_matrix_lon =
     {
-        .a1 = cos(lon),     .b1 = 0.0f,      .c1 = sin(lon),     .d1 =  0.0f,
+        .a1 = cos(-lon),     .b1 = 0.0f,      .c1 = sin(-lon),     .d1 =  0.0f,
         .a2 = 0.0f,         .b2 = 1.0f,      .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = -sin(lon),    .b3 = 0.0f,      .c3 = cos(lon),     .d3 =  0.0f,
+        .a3 = -sin(-lon),    .b3 = 0.0f,      .c3 = cos(-lon),     .d3 =  0.0f,
         .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
     };
-    mat4x4f rotation_matrix_x =
+    vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_lon);
+    mat4x4f rotation_matrix_lat =
     {
         .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
-        .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
-        .a3 = 0.0f,        .b3 = sin(angle),  .c3 = cos(angle),  .d3 =  0.0f,
+        .a2 = 0.0f,        .b2 = cos(-lat),  .c2 = -sin(-lat), .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = sin(-lat),  .c3 = cos(-lat),  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
-    };*/
-
-
-
-
-
-    vec3f look = normalize3f(diff3f(poi, e));
-    // The w is the vector with the same direction of the look vector, but contrary sense
-    vec3f w = diff3f(zero_vec3f, look);
-    // The u vector is perpendicular to the plane formed by the up and the w vectors
-    vec3f u = normalize3f(cross_product3f(up, w));
-    // And the vector v is perpendicular to the plane formed by the w and u vectors
-    vec3f v = cross_product3f(w, u); // Both are already unitary vectors, no need to normallize
-    // Rotation to make the bases coincide (I guess xD)
-    mat4x4f mr = {
-        .a1 = u.x,  .b1 = u.y,  .c1 = u.z,  .d1 = 0.0f,
-        .a2 = v.x,  .b2 = v.y,  .c2 = v.z,  .d2 = 0.0f,
-        .a3 = w.x,  .b3 = w.y,  .c3 = w.z,  .d3 = 0.0f,
-        .a4 = 0.0f, .b4 = 0.0f, .c4 = 0.0f, .d4 = 1.0f
     };
-    // Translation to make the origins coincide (I guess xD)
-    mat4x4f mt = {
-        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,  .d1 = -e.x,
-        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,  .d2 = -e.y,
-        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,  .d3 = -e.z,
-        .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,  .d4 = 1.0f
+    vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_lat);
+   
+    // Now the UP vector(supposedly perpendicular to the LOOK vector) is rotated so it overlaps with thee Y axis
+    vec3f xy_up_aux = { .x = up.x, .y = up.z, .z = 0 };
+    // And these are the angles they form with the vec
+    float angle = get_angle3f(xy_up_aux, y_dir_vec3f);
+    mat4x4f rotation_matrix_around_z = {
+        .a1 = cos(angle),    .b1 = -sin(angle),  .c1 = 0.0f,         .d1 =  0.0f,
+        .a2 = sin(angle),    .b2 = cos(angle) ,  .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = 0.0f,         .b3 = 0.0f,          .c3 = 1.0f,         .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,          .c4 = 0.0f,         .d4 =  1.0f
     };
-    mat4x4f vmatrix = mat4x4f_prod(mt, mr);
-    log_debug_matx4f(&vmatrix, "VIEW_MATRIX");
+    vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_around_z);
+
     push(mats.view, vmatrix);
 }
 
@@ -211,7 +203,7 @@ void rotate_matrix(exe3f_t rot_exe, float angle)
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
 
-    // The exe is rotated to match one of the axis (X axis in this case)
+    // The referencial axis is rotated to match one of the cartessian axis (Z in this case)
     // These are projections in their respectives planes
     vec3f xy_aux = { .x = exe_vec.x, .y = exe_vec.y, .z = 0 };
     vec3f xz_aux = { .x = exe_vec.x, .y = 0, .z = exe_vec.z };

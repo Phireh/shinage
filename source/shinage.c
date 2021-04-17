@@ -491,14 +491,14 @@ int main(int argc, char *argv[])
         build_matrices();
         set_mat(MODEL);
         /*float ar = (float)x11_window_width / (float)x11_window_height;
-        perspective_camera(90.0, ar, 0.01f, 100.0f);
-        vec3f eye = { .x = 0, .y = 0.0f, .z = -1.0f };
+        perspective_camera(90.0, ar, 0.01f, 100.0f);*/
+        vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
         look_at(eye, poi, up_vector);
-        vec3f scale = { .x = 0.25, .y = 0.25, .z = 0.25 };
+        vec3f scale = { .x = 0.5, .y = 0.5, .z = 0.5 };
         scale_matrix(scale);
         vec3f translation = { .x = 0, .y = 0, .z = 0 };
-        translate_matrix(translation);*/
+        translate_matrix(translation);
       }
       exe3f_t rot_exe =
       { 
