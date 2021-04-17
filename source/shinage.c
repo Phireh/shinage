@@ -490,19 +490,19 @@ int main(int argc, char *argv[])
       {
         build_matrices();
         set_mat(MODEL);
-        /*float ar = (float)x11_window_width / (float)x11_window_height;
-        perspective_camera(90.0, ar, 0.01f, 100.0f);*/
+        float ar = (float)x11_window_width / (float)x11_window_height;
+        perspective_camera(M_PI * 0.8, ar, 0.1f, 100.0f);
         vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
         look_at(eye, poi, up_vector);
-        vec3f scale = { .x = 0.5, .y = 0.5, .z = 0.5 };
+        vec3f scale = { .x = 0.35, .y = 0.35, .z = 0.35 };
         scale_matrix(scale);
         vec3f translation = { .x = 0, .y = 0, .z = 0 };
         translate_matrix(translation);
       }
       exe3f_t rot_exe =
       { 
-        .vec = { .x = 0.0f, .y = 0.0f, .z = 1.0f },
+        .vec = { .x = 0.0f, .y = 1.0f, .z = 0.0f },
         .pnt = { .x = 0.0f, .y =  0.0f, .z = 0.0f }
       };
       rotate_matrix(rot_exe, 0.025);

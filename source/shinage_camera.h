@@ -83,6 +83,11 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     vec3f xy_up_aux = { .x = up.x, .y = up.z, .z = 0 };
     // And these are the angles they form with the vec
     float angle = get_angle3f(xy_up_aux, y_dir_vec3f);
+    // TODO: Error handling or logging
+    if (angle == -1)
+    {
+        angle = 0.0f;
+    }
     mat4x4f rotation_matrix_around_z = {
         .a1 = cos(angle),    .b1 = -sin(angle),  .c1 = 0.0f,         .d1 =  0.0f,
         .a2 = sin(angle),    .b2 = cos(angle) ,  .c2 = 0.0f,         .d2 =  0.0f,
@@ -98,18 +103,17 @@ void look_at(vec3f e, vec3f poi, vec3f up)
 *   Sets the camera projection as perspective
 *   Modifies the PROJECTION matrix
 */
-void perspective_camera(float fovy, float ar, float near, float far)
+void perspective_camera(float fov_y, float ar, float n, float f)
 {
-    float D2R = M_PI / 180.0;
-    float y_scale = 1.0 / tan(D2R * fovy / 2);
-    float x_scale = y_scale / ar;
-    float nearmfar = near - far;
+    float tan_fov = tan( fov_y * 0.5 );
+    float z_range = n - f;
+
     mat4x4f pmatrix =
     {
-        .a1 = x_scale,  .b1 = 0.0f,     .c1 = 0.0f,                     .d1 = 0.0f,
-        .a2 = 0.0f,     .b2 = y_scale,  .c2 = 0.0f,                     .d2 = 0.0f,
-        .a3 = 0.0f,     .b3 = 0.0f,     .c3 = (far + near) / nearmfar,  .d3 = -1.0,
-        .a4 = 0.0f,     .b4 = 0.0f,     .c4 = 2*far*near / nearmfar,    .d4 = 0.0f
+        .a1 = 1.0 / (tan_fov * ar),  .b1 = 0.0f,           .c1 = 0.0f,                .d1 = 0.0f,
+        .a2 = 0.0f,                  .b2 = 1.0 / tan_fov,  .c2 = 0.0f,                .d2 = 0.0f,
+        .a3 = 0.0f,                  .b3 = 0.0f,           .c3 = (f + n) / z_range,   .d3 = -1.0,
+        .a4 = 0.0f,                  .b4 = 0.0f,           .c4 = 2*f*n / z_range,     .d4 = 0.0f
     };
     push(mats.projection, pmatrix);
 }
