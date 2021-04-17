@@ -174,11 +174,17 @@ void rotate_matrix(exe3f_t rot_exe, float angle)
     vec3f xz_aux = { .x = exe_vec.x, .y = 0, .z = exe_vec.z };
     // And these are the angles they form with the vec
     float lon = get_angle3f(xz_aux, z_dir_vec3f);
-    if (lon < 1) // If there is no angle (zero vector involved)
-        lon = 0.0f;
     float lat = get_angle3f(xy_aux, x_dir_vec3f);
-    if (lat < 1)
+
+    // TODO: Error handling or logging
+    if (lon == -1)
+    {
+        lon = 0.0f;
+    }
+    if (lat == -1)
+    {
         lat = 0.0f;
+    }
 
     mat4x4f rotation_matrix_y =
     {

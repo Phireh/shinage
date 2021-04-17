@@ -206,7 +206,7 @@ static inline vec3f normalize3f(vec3f vec)
 
 /*
 *   The return value is represented in radians. If there is no solution
-*   (zero vector involved), -2 is returned, a normally impossible result
+*   (zero vector involved) -1 is returned (usually only positive angles are returned)
 */
 static inline float get_angle3f(vec3f v1, vec3f v2)
 {
@@ -214,7 +214,7 @@ static inline float get_angle3f(vec3f v1, vec3f v2)
     float mod_v2 = length3f(v2);
     float den = mod_v1 * mod_v2;
     if (den == 0)
-      return -2;
+      return -1;
     float dot_prod = dot_product3f(v1, v2);
     float cs = dot_prod / den;
     if (cs > 1)
