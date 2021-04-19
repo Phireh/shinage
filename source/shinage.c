@@ -495,14 +495,14 @@ int main(int argc, char *argv[])
         vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
         look_at(eye, poi, up_vector);
-        vec3f scale = { .x = 0.35, .y = 0.35, .z = 0.35 };
-        scale_matrix(scale);
+        //vec3f scale = { .x = 0.35, .y = 0.35, .z = 0.35 };
+        //scale_matrix(scale);
         vec3f translation = { .x = 0, .y = 0, .z = 0 };
         translate_matrix(translation);
       }
       exe3f_t rot_exe =
       { 
-        .vec = { .x = 0.0f, .y = 1.0f, .z = 0.0f },
+        .vec = { .x = 0.0f, .y = 0.0f, .z = 0.0f },
         .pnt = { .x = 0.0f, .y =  0.0f, .z = 0.0f }
       };
       rotate_matrix(rot_exe, 0.025);
@@ -661,6 +661,7 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
   vec4f vs_mod[count];
   vec4f vs_vis[count];
   vec4f vs_pro[count];
+  vec4f vs_div[count];
   for (i = 0; i < count; i++)
   {
     vec4f v = zero_vec4f;
@@ -678,11 +679,17 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
     vs_vis[i] = v;
     v = mat4x4f_vec4f_prod(pmatrix, v);
     vs_pro[i] = v;
+    for (j = 0; j < 4; j++)
+    {
+      v.v[j] = v.v[j] / v.w;
+    }
+    vs_div[i] = v;
   }
   log_debug_vec4f(vs_ini, count, "OBJECT SPACE");
   log_debug_vec4f(vs_mod, count, "WORLD SPACE");
   log_debug_vec4f(vs_vis, count, "CAMERA SPACE");
-  log_debug_vec4f(vs_pro, count, "SCREEN SPACE");
+  log_debug_vec4f(vs_pro, count, "SCREEN SPACE (NOT NORMALIZED)");
+  log_debug_vec4f(vs_div, count, "SCREEN SPACE (PERSPECTIVE DIVISION)");
 }
 
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source)
