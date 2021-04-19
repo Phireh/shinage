@@ -634,6 +634,7 @@ void draw_gl_cube(void)
 
 void draw_bouncing_cube_scene()
 {
+  // Dynamic values for a cool animation: fla, but cool
   static float scale_fact = 0.5f;
   static float scale_delta = -0.0025f;
   scale_fact += scale_delta;
@@ -662,27 +663,57 @@ void draw_bouncing_cube_scene()
   if (rot_fact > M_PI * 2)
     rot_fact = 0;
 
-  // Reseting drawing utilities
+  // TODO: This muight not be the straightforwar way to erset everything, but it will do for now
+  // Reseting drawing utilities 
+  // Resets the stacks and 
   build_matrices();
+  // The matrix affected by the transformations will be the MODEL matrix
   set_mat(MODEL);
   float ar = (float)x11_window_width / (float)x11_window_height;
   perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
   vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
   vec3f poi = { .x = 0, .y = 0, .z = 0 };
+  // The general UP vector is (0, 1, 0), but for parallel LOOK vectors this should be changed
   look_at(eye, poi, up_vector);
 
+  // Pushing the marix makes a copy of the current matrix and stacks it over. The matrix on top will be the 
+  // one to be used
   push_matrix();
-  vec3f scale = { .x = scale_fact, .y = scale_fact, .z = scale_fact };
-  scale_matrix(scale);
-  vec3f translation = { .x = x_pos, .y = y_pos, .z = z_pos };
-  translate_matrix(translation);
-  exe3f_t rot_exe =
-  { 
-    .vec = { .x = 1.0f, .y = 0.75, .z = 1.0f },
-    .pnt = { .x = 0, .y = 0, .z = 0.0f }
-  };
-  rotate_matrix(rot_exe, rot_fact);
-  draw_gl_cube();
+    vec3f scale = { .x = scale_fact, .y = scale_fact, .z = scale_fact };
+    scale_matrix(scale);
+    vec3f translation = { .x = x_pos, .y = y_pos, .z = z_pos };
+    translate_matrix(translation);
+    exe3f_t rot_exe =
+    { 
+      .vec = { .x = 1.0f, .y = 0.75, .z = 1.0f },
+      .pnt = { .x = 0, .y = 0, .z = 0 }
+    };
+    rotate_matrix(rot_exe, rot_fact);
+    draw_gl_cube();
+
+    // Stacking another matrix (copies the previous transformations)
+    push_matrix();
+      scale_matrix(scale);
+      translation.x = 0; translation.y = 2; translation.z = 0;
+      translate_matrix(translation);
+      rotate_matrix(rot_exe, rot_fact);
+      draw_gl_cube();
+    // Popping the matrix removes the top matrix from the stack
+    pop_matrix();
+    // The last few transformations on the MODEL matrix have been "undone"
+
+    // And with this, the same code generates the cube on the opposite position of the big one
+    rot_exe.vec.x = 0; rot_exe.vec.y = 0; rot_exe.vec.z = 1;
+    rotate_matrix(rot_exe, M_PI);
+
+    push_matrix();
+      scale_matrix(scale);
+      translation.x = 0; translation.y = 2; translation.z = 0;
+      translate_matrix(translation);
+      rotate_matrix(rot_exe, rot_fact);
+      draw_gl_cube();
+    pop_matrix();
+
   pop_matrix();
 }
 
