@@ -664,10 +664,13 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
   for (i = 0; i < count; i++)
   {
     vec4f v = zero_vec4f;
+    // In GLSL he values are auto filled like (X, 0, 0, 1)
     for (j = 0; j < dims; j++)
       v.v[j] = vertices[i * dims + j];
-    for (k = j; k < 4; k++)
+    for (k = j; k < 3; k++)
       v.v[k] = 0.0f;
+    if (dims < 4) 
+      v.v[k] = 1;
     vs_ini[i] = v;
     v = mat4x4f_vec4f_prod(mmatrix, v);
     vs_mod[i] = v;

@@ -79,20 +79,27 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     };
     vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_lat);
    
-    // Now the UP vector(supposedly perpendicular to the LOOK vector) is rotated so it overlaps with thee Y axis
-    vec3f xy_up_aux = { .x = up.x, .y = up.z, .z = 0 };
+    // Now the UP vector (perpendicular to the LOOK vector) is rotated so it overlaps with thee Y axis
+    // To get this UP vector we first cross_product3f the global UP given as a parameter with
+    // the LOOK vector, and then, this new (right) vector is cross_product3f with the LOOK vector
+    vec3f right = cross_product3f(up, look);
+    vec3f local_up = cross_product3f(right, look);
+    vec4f up4f = { .x = local_up.x, .y = local_up.y, .z = local_up.z, .w = 0 };
+    up4f = mat4x4f_vec4f_prod(rotation_matrix_lat, up4f);
+    vec3f xy_up_aux = { .x = up4f.x, .y = up4f.y, .z = 0 };
     // And these are the angles they form with the vec
     float angle = get_angle3f(xy_up_aux, y_dir_vec3f);
+    log_debug("%f, %f, %f", up4f.x, up4f.y, up4f.z);
     // TODO: Error handling or logging
     if (angle == -1)
     {
         angle = 0.0f;
     }
     mat4x4f rotation_matrix_around_z = {
-        .a1 = cos(angle),    .b1 = -sin(angle),  .c1 = 0.0f,         .d1 =  0.0f,
-        .a2 = sin(angle),    .b2 = cos(angle) ,  .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = 0.0f,         .b3 = 0.0f,          .c3 = 1.0f,         .d3 =  0.0f,
-        .a4 = 0.0f,         .b4 = 0.0f,          .c4 = 0.0f,         .d4 =  1.0f
+        .a1 = cos(-angle),   .b1 = -sin(-angle),  .c1 = 0.0f,  .d1 =  0.0f,
+        .a2 = sin(-angle),   .b2 = cos(-angle),   .c2 = 0.0f,  .d2 =  0.0f,
+        .a3 = 0.0f,          .b3 = 0.0f,          .c3 = 1.0f,  .d3 =  0.0f,
+        .a4 = 0.0f,          .b4 = 0.0f,          .c4 = 0.0f,  .d4 =  1.0f
     };
     vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_around_z);
 

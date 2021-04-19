@@ -343,7 +343,7 @@ static inline void log_debug_matx4f(mat4x4f *m, char* txt)
 
 static inline void log_debug_vec4f(vec4f *vs, uint count, char* txt)
 {
-  const int MAX_BUF = 30 * count;
+  const int MAX_BUF = 32 * count;
   char buffer[MAX_BUF];
   uint length = 0;
   for (uint i = 0; i < count; i++)
