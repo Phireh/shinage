@@ -107,7 +107,7 @@ typedef struct
 {
     vec3f pnt;
     vec3f vec;
-} exe3f_t;
+} axis3f_t;
 
 const vec3f x_dir_vec3f = { .x = 1, .y = 0, .z = 0 };
 const vec3f y_dir_vec3f = { .x = 0, .y = 1, .z = 0 };

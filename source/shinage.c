@@ -554,7 +554,7 @@ void draw_gl_cube(void)
       0,   1,   1,  // Cyan
       1,   0,   0,  // Red
       1,   0,   1,  // Magenta
-      1,   1,   0,  // Tellow
+      1,   1,   0,  // Yellow
       1,   1,   1   // White
     };
 
@@ -634,7 +634,7 @@ void draw_gl_cube(void)
 
 void draw_bouncing_cube_scene()
 {
-  // Dynamic values for a cool animation: fla, but cool
+  // Dynamic values for a cool animation
   static float scale_fact = 0.5f;
   static float scale_delta = -0.0025f;
   scale_fact += scale_delta;
@@ -647,12 +647,15 @@ void draw_bouncing_cube_scene()
   static float y_pos_delta = -0.0005f;
   static float z_pos = -0.6;
   static float z_pos_delta = -0.0005f;
-  //x_pos += x_pos_delta;
+  
+  // x_pos += x_pos_delta;
   if (x_pos < -0.15f || x_pos > 0.15f)
     x_pos_delta = -x_pos_delta;
-  //y_pos += y_pos_delta;
+  // y_pos += y_pos_delta;
+  
   if (y_pos < -0.25f || y_pos > 0.15f)
     y_pos_delta = -y_pos_delta;
+  
   z_pos += z_pos_delta;
   if (z_pos < -0.15f || z_pos > 0.15f)
     z_pos_delta = -z_pos_delta;
@@ -663,7 +666,7 @@ void draw_bouncing_cube_scene()
   if (rot_fact > M_PI * 2)
     rot_fact = 0;
 
-  // TODO: This muight not be the straightforwar way to erset everything, but it will do for now
+  // TODO: This might not be the most straightforward way to reset everything, but it will do for now
   // Reseting drawing utilities 
   // Resets the stacks and 
   build_matrices();
@@ -673,22 +676,25 @@ void draw_bouncing_cube_scene()
   perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
   vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
   vec3f poi = { .x = 0, .y = 0, .z = 0 };
-  // The general UP vector is (0, 1, 0), but for parallel LOOK vectors this should be changed
+
+  /* TODO: With an unrestricted free camera, the up vector (0,1,0) is not enough for all cases.
+     Specifically, if (0,1,0) is parallel to the (poi - eye) vector, the cross product is undefined.
+     We should detect this case and use a different, non-paralel up vector, like (0,0,1) */
   look_at(eye, poi, up_vector);
 
-  // Pushing the marix makes a copy of the current matrix and stacks it over. The matrix on top will be the 
-  // one to be used
-  push_matrix();
+  /* Pushing the matrix makes a copy of the current matrix and stacks it over. The matrix on top will be the 
+     one to be used */
+    push_matrix();
     vec3f scale = { .x = scale_fact, .y = scale_fact, .z = scale_fact };
     scale_matrix(scale);
     vec3f translation = { .x = x_pos, .y = y_pos, .z = z_pos };
     translate_matrix(translation);
-    exe3f_t rot_exe =
+    axis3f_t rot_axis =
     { 
       .vec = { .x = 1.0f, .y = 0.75, .z = 1.0f },
       .pnt = { .x = 0, .y = 0, .z = 0 }
     };
-    rotate_matrix(rot_exe, rot_fact);
+    rotate_matrix(rot_axis, rot_fact);
     draw_gl_cube();
 
     // Stacking another matrix (copies the previous transformations)
@@ -696,21 +702,21 @@ void draw_bouncing_cube_scene()
       scale_matrix(scale);
       translation.x = 0; translation.y = 2; translation.z = 0;
       translate_matrix(translation);
-      rotate_matrix(rot_exe, rot_fact);
+      rotate_matrix(rot_axis, rot_fact);
       draw_gl_cube();
     // Popping the matrix removes the top matrix from the stack
     pop_matrix();
     // The last few transformations on the MODEL matrix have been "undone"
 
     // And with this, the same code generates the cube on the opposite position of the big one
-    rot_exe.vec.x = 0; rot_exe.vec.y = 0; rot_exe.vec.z = 1;
-    rotate_matrix(rot_exe, M_PI);
+    rot_axis.vec.x = 0; rot_axis.vec.y = 0; rot_axis.vec.z = 1;
+    rotate_matrix(rot_axis, M_PI);
 
     push_matrix();
       scale_matrix(scale);
       translation.x = 0; translation.y = 2; translation.z = 0;
       translate_matrix(translation);
-      rotate_matrix(rot_exe, rot_fact);
+      rotate_matrix(rot_axis, rot_fact);
       draw_gl_cube();
     pop_matrix();
 
@@ -731,7 +737,7 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
   for (i = 0; i < count; i++)
   {
     vec4f v = zero_vec4f;
-    // In GLSL he values are auto filled like (X, 0, 0, 1)
+    // In GLSL the default values of a partially declared vec4 are (X, 0, 0, 1)
     for (j = 0; j < dims; j++)
       v.v[j] = vertices[i * dims + j];
     for (k = j; k < 3; k++)

@@ -28,7 +28,7 @@ void build_matrices()
 
 /*
 *   Sets the target for the camera.
-*   NOTE: The up vector is the subjective vertical. Rotation arround the w vector. It has to be perpendicular to the look vector
+*   NOTE: The up vector is the subjective vertical. Rotation around the w vector. It has to be perpendicular to the look vector
 *   Modifies the VIEW matrix.
 */
 void look_at(vec3f e, vec3f poi, vec3f up)
@@ -44,9 +44,9 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     };
     vmatrix = mat4x4f_prod(vmatrix, translation_matrix);
 
-    // The LOOK vector is rotated so it overlaps with thee Z axis
+    // The LOOK vector is rotated so it overlaps with the Z axis
     vec3f look = normalize3f(diff3f(poi, e));
-    // The referencial axis is rotated to match one of the cartessian axis (Z in this case)
+    // The referencial axis is rotated to match one of the cartesian axes (Z in this case)
     // These are projections in their respectives planes
     vec3f xy_look_aux = { .x = look.x, .y = look.y, .z = 0 };
     vec3f xz_look_aux = { .x = look.x, .y = 0, .z = look.z };
@@ -79,7 +79,7 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     };
     vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_lat);
    
-    // Now the UP vector (perpendicular to the LOOK vector) is rotated so it overlaps with thee Y axis
+    // Now the UP vector (perpendicular to the LOOK vector) is rotated so it overlaps with the Y axis
     // To get this UP vector we first cross_product3f the global UP given as a parameter with
     // the LOOK vector, and then, this new (right) vector is cross_product3f with the LOOK vector
     vec3f right = cross_product3f(up, look);
@@ -181,42 +181,42 @@ void scale_matrix(vec3f sc)
     push(active_mat, aux);
 }
 
-void rotate_matrix(exe3f_t rot_exe, float angle)
+void rotate_matrix(axis3f_t rot_axis, float angle)
 {
     if (!active_mat)
         return;
 
-    vec3f exe_pnt = rot_exe.pnt;
-    vec3f exe_vec = rot_exe.vec;
+    vec3f axis_pnt = rot_axis.pnt;
+    vec3f axis_vec = rot_axis.vec;
 
     // If there is not a vector for reference, there is no rotation
-    if (!length3f(exe_vec))
+    if (!length3f(axis_vec))
         return;
 
     mat4x4f aux = pop(active_mat);
 
-    // The exe has to be translated to the origin
+    // The axis has to be translated to the origin
     mat4x4f translation_matrix =
     {
-        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  -exe_pnt.x,
-        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  -exe_pnt.y,
-        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -exe_pnt.z,
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  -axis_pnt.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  -axis_pnt.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -axis_pnt.z,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
     aux = mat4x4f_prod(aux, translation_matrix);
     // This matrix will be used to unmake the translation
     mat4x4f un_translation_matrix =
     {
-        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  exe_pnt.x,
-        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  exe_pnt.y,
-        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  exe_pnt.z,
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  axis_pnt.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  axis_pnt.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  axis_pnt.z,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
 
-    // The referencial axis is rotated to match one of the cartessian axis (Z in this case)
+    // The referencial axis is rotated to match one of the cartesian axes (Z in this case)
     // These are projections in their respectives planes
-    vec3f xy_aux = { .x = exe_vec.x, .y = exe_vec.y, .z = 0 };
-    vec3f xz_aux = { .x = exe_vec.x, .y = 0, .z = exe_vec.z };
+    vec3f xy_aux = { .x = axis_vec.x, .y = axis_vec.y, .z = 0 };
+    vec3f xz_aux = { .x = axis_vec.x, .y = 0, .z = axis_vec.z };
     // And these are the angles they form with the vec
     float lon = get_angle3f(xz_aux, z_dir_vec3f);
     float lat = get_angle3f(xy_aux, x_dir_vec3f);
@@ -262,8 +262,8 @@ void rotate_matrix(exe3f_t rot_exe, float angle)
         .a3 = 0.0f,        .b3 = sin(lat),  .c3 = cos(lat),  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
     };
-    // With the newt rotations the exe will be overlapping the X axis, so the rotation
-    // will be performed arround it. This is the transformation that won't be undone
+    // With the new rotations the axis will be overlapping the X axis, so the rotation
+    // will be performed around it. This is the transformation that won't be undone
     mat4x4f rotation_matrix_around_z =
     {
         .a1 = cos(angle),    .b1 = -sin(angle),  .c1 = 0.0f,         .d1 =  0.0f,
@@ -273,7 +273,7 @@ void rotate_matrix(exe3f_t rot_exe, float angle)
     };
     aux = mat4x4f_prod(aux, rotation_matrix_around_z);
 
-    // The auxilliar transformations are unmade in reverse order
+    // The auxiliar transformations are unmade in reverse order
     aux = mat4x4f_prod(aux, un_rotation_matrix_lat);
     aux = mat4x4f_prod(aux, un_rotation_matrix_lon);
     aux = mat4x4f_prod(aux, un_translation_matrix);
