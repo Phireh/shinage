@@ -491,19 +491,19 @@ int main(int argc, char *argv[])
         build_matrices();
         set_mat(MODEL);
         float ar = (float)x11_window_width / (float)x11_window_height;
-        perspective_camera(M_PI * 0.8, ar, 0.1f, 100.0f);
+        perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
         vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
         look_at(eye, poi, up_vector);
-        //vec3f scale = { .x = 0.35, .y = 0.35, .z = 0.35 };
-        //scale_matrix(scale);
-        vec3f translation = { .x = 0, .y = 0, .z = 0 };
+        vec3f scale = { .x = 0.5, .y = 0.5, .z = 0.5 };
+        scale_matrix(scale);
+        vec3f translation = { .x = 0, .y = -0.22, .z = 0 };
         translate_matrix(translation);
       }
       exe3f_t rot_exe =
       { 
         .vec = { .x = 0.0f, .y = 0.0f, .z = 0.0f },
-        .pnt = { .x = 0.0f, .y =  0.0f, .z = 0.0f }
+        .pnt = { .x = 0.0f, .y = 0.0f, .z = 0.0f }
       };
       rotate_matrix(rot_exe, 0.025);
       draw_gl_cube();
@@ -567,14 +567,14 @@ void draw_gl_cube(void)
     };
 
     float colours[] = {
-      0.78f,   0.78f,   0.78f,
-      0.78f,   0.78f,   0.78f,
-      0.78f,   0.78f,   0.78f,
-      0.78f,   0.78f,   0.78f,
-      0.22f,   0.22f,   0.22f,
-      0.22f,   0.22f,   0.22f,
-      0.22f,   0.22f,   0.22f,
-      0.22f,   0.22f,   0.22f
+      0,   0,   0,  // Black
+      0,   0,   1,  // Blue
+      0,   1,   0,  // Green
+      0,   1,   1,  // Cyan
+      1,   0,   0,  // Red
+      1,   0,   1,  // Magenta
+      1,   1,   0,  // Tellow
+      1,   1,   1   // White
     };
 
     uint num_indices = 36;
@@ -606,8 +606,8 @@ void draw_gl_cube(void)
     mat4x4f vmatrix = peek(mats.view);
     mat4x4f pmatrix = peek(mats.projection);
     
-    glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_FALSE, mmatrix.v);
-    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_FALSE, vmatrix.v);
+    glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
+    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_TRUE, vmatrix.v);
     glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
     
     static unsigned int vao = 0;

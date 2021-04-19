@@ -37,9 +37,9 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     // The camera is brought to the origin
     mat4x4f translation_matrix =
     {
-        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  -e.x,
-        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  -e.y,
-        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -e.z,
+        .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  e.x,
+        .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,   .d2 =  e.y,
+        .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  e.z,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
     vmatrix = mat4x4f_prod(vmatrix, translation_matrix);
@@ -83,7 +83,7 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     // To get this UP vector we first cross_product3f the global UP given as a parameter with
     // the LOOK vector, and then, this new (right) vector is cross_product3f with the LOOK vector
     vec3f right = cross_product3f(up, look);
-    vec3f local_up = cross_product3f(right, look);
+    vec3f local_up = cross_product3f(look, right);
     vec4f up4f = { .x = local_up.x, .y = local_up.y, .z = local_up.z, .w = 0 };
     up4f = mat4x4f_vec4f_prod(rotation_matrix_lat, up4f);
     vec3f xy_up_aux = { .x = up4f.x, .y = up4f.y, .z = 0 };
