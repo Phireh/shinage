@@ -1,5 +1,7 @@
 #ifndef SHINAGE_CAMERA_H
 #define SHINAGE_CAMERA_H
+#include <stdbool.h>
+
 #include "shinage_math.h"
 #include "shinage_debug.h"
 #include "shinage_stack_structures.h"
