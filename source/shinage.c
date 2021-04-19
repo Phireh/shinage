@@ -485,28 +485,9 @@ int main(int argc, char *argv[])
       glClearColor(1.0f, 0.6f, 1.0f, 1.0f);
       glEnable(GL_DEPTH_TEST);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      
-      if (!mats.model || !mats.view || !mats.projection)
-      {
-        build_matrices();
-        set_mat(MODEL);
-        float ar = (float)x11_window_width / (float)x11_window_height;
-        perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
-        vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
-        vec3f poi = { .x = 0, .y = 0, .z = 0 };
-        look_at(eye, poi, up_vector);
-        vec3f scale = { .x = 0.5, .y = 0.5, .z = 0.5 };
-        scale_matrix(scale);
-        vec3f translation = { .x = 0, .y = -0.22, .z = 0 };
-        translate_matrix(translation);
-      }
-      exe3f_t rot_exe =
-      { 
-        .vec = { .x = 0.0f, .y = 0.0f, .z = 0.0f },
-        .pnt = { .x = 0.0f, .y = 0.0f, .z = 0.0f }
-      };
-      rotate_matrix(rot_exe, 0.025);
-      draw_gl_cube();
+
+      draw_bouncing_cube_scene();
+
       glXSwapBuffers(x11_display, x11_window);
 
       ++framecount;
@@ -608,7 +589,7 @@ void draw_gl_cube(void)
     
     glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
     glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_TRUE, vmatrix.v);
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_FALSE, pmatrix.v);
+    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
     
     static unsigned int vao = 0;
     if (!vao)
@@ -649,6 +630,60 @@ void draw_gl_cube(void)
       show_cpu_calculated_matrix = false;
     }
 
+}
+
+void draw_bouncing_cube_scene()
+{
+  static float scale_fact = 0.5f;
+  static float scale_delta = -0.0025f;
+  scale_fact += scale_delta;
+  if (scale_fact < 0.25f || scale_fact > 0.75f)
+    scale_delta = -scale_delta;
+
+  static float x_pos = 0;
+  static float x_pos_delta = -0.0005f;
+  static float y_pos = 0.07;
+  static float y_pos_delta = -0.0005f;
+  static float z_pos = -0.6;
+  static float z_pos_delta = -0.0005f;
+  //x_pos += x_pos_delta;
+  if (x_pos < -0.15f || x_pos > 0.15f)
+    x_pos_delta = -x_pos_delta;
+  //y_pos += y_pos_delta;
+  if (y_pos < -0.25f || y_pos > 0.15f)
+    y_pos_delta = -y_pos_delta;
+  z_pos += z_pos_delta;
+  if (z_pos < -0.15f || z_pos > 0.15f)
+    z_pos_delta = -z_pos_delta;
+
+  static float rot_fact = 0.75f;
+  static float rot_delta = -0.025f;
+  rot_fact += rot_delta;
+  if (rot_fact > M_PI * 2)
+    rot_fact = 0;
+
+  // Reseting drawing utilities
+  build_matrices();
+  set_mat(MODEL);
+  float ar = (float)x11_window_width / (float)x11_window_height;
+  perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
+  vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
+  vec3f poi = { .x = 0, .y = 0, .z = 0 };
+  look_at(eye, poi, up_vector);
+
+  push_matrix();
+  vec3f scale = { .x = scale_fact, .y = scale_fact, .z = scale_fact };
+  scale_matrix(scale);
+  vec3f translation = { .x = x_pos, .y = y_pos, .z = z_pos };
+  translate_matrix(translation);
+  exe3f_t rot_exe =
+  { 
+    .vec = { .x = 1.0f, .y = 0.75, .z = 1.0f },
+    .pnt = { .x = 0, .y = 0, .z = 0.0f }
+  };
+  rotate_matrix(rot_exe, rot_fact);
+  draw_gl_cube();
+  pop_matrix();
 }
 
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims)

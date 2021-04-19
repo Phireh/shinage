@@ -89,7 +89,6 @@ void look_at(vec3f e, vec3f poi, vec3f up)
     vec3f xy_up_aux = { .x = up4f.x, .y = up4f.y, .z = 0 };
     // And these are the angles they form with the vec
     float angle = get_angle3f(xy_up_aux, y_dir_vec3f);
-    log_debug("%f, %f, %f", up4f.x, up4f.y, up4f.z);
     // TODO: Error handling or logging
     if (angle == -1)
     {
@@ -119,8 +118,8 @@ void perspective_camera(float fov_y, float ar, float n, float f)
     {
         .a1 = 1.0 / (tan_fov * ar),  .b1 = 0.0f,           .c1 = 0.0f,                .d1 = 0.0f,
         .a2 = 0.0f,                  .b2 = 1.0 / tan_fov,  .c2 = 0.0f,                .d2 = 0.0f,
-        .a3 = 0.0f,                  .b3 = 0.0f,           .c3 = (f + n) / z_range,   .d3 = -1.0,
-        .a4 = 0.0f,                  .b4 = 0.0f,           .c4 = 2*f*n / z_range,     .d4 = 0.0f
+        .a3 = 0.0f,                  .b3 = 0.0f,           .c3 = (f + n) / z_range,   .d3 = 2*f*n / z_range,
+        .a4 = 0.0f,                  .b4 = 0.0f,           .c4 = -1.0,                .d4 = 0.0f
     };
     push(mats.projection, pmatrix);
 }
@@ -281,5 +280,24 @@ void rotate_matrix(exe3f_t rot_exe, float angle)
 
     push(active_mat, aux);
 }
+
+bool push_matrix()
+{
+    if (!active_mat)
+        return false;
+
+    mat4x4f aux = peek(active_mat);
+    bool done = push(active_mat, aux);
+    return done;
+}
+
+void pop_matrix()
+{
+    if (!active_mat)
+        return;
+
+    pop(active_mat);
+}
+
 
 #endif

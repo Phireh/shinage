@@ -29,11 +29,12 @@ int is_empty(matrix_stack_t *stack)
     return stack->top == -1;
 }
  
-void push(matrix_stack_t *stack, mat4x4f item)
+bool push(matrix_stack_t *stack, mat4x4f item)
 {
     if (is_full(stack))
-        return;
+        return false;
     stack->array[++stack->top] = item;
+    return true;
 }
  
 mat4x4f pop(matrix_stack_t *stack)
