@@ -491,6 +491,16 @@ int main(int argc, char *argv[])
       glXSwapBuffers(x11_display, x11_window);
 
       ++framecount;
+
+
+      /* Some tests */
+      static bool tested = false;
+      if (!tested)
+      {
+        //test_determinants_calculation();
+        test_inverse_ccalculation();
+        tested = true;
+      }
   }
 
   /* Cleanup */  

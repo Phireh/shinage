@@ -1,6 +1,7 @@
 #ifndef SHINAGE_MATH_H
 #define SHINAGE_MATH_H
 #include <math.h>
+#include <stdlib.h>
 #include "shinage_debug.h"
 
 /* Rough estimate of an epsilon value based on the ~7 digit precision of 
@@ -331,6 +332,23 @@ static inline mat4x4f summat4x4f(mat4x4f m1, mat4x4f m2, bool subtraction)
   return res;
 }
 
+static inline void log_debug_matx2f(mat2x2f *m, char* txt)
+{
+  log_debug("%s\n %.3f %.3f\n %.3f %.3f\n",
+                  txt,
+                  m->a1, m->b1,
+                  m->a2, m->b2);
+}
+
+static inline void log_debug_matx3f(mat3x3f *m, char* txt)
+{
+  log_debug("%s\n %.3f %.3f %.3f\n %.3f %.3f %.3f\n %.3f %.3f %.3f\n",
+                  txt,
+                  m->a1, m->b1, m->c1,
+                  m->a2, m->b2, m->c2,
+                  m->a3, m->b3, m->c3);
+}
+
 static inline void log_debug_matx4f(mat4x4f *m, char* txt)
 {
   log_debug("%s\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
@@ -354,5 +372,181 @@ static inline void log_debug_vec4f(vec4f *vs, uint count, char* txt)
   log_debug("\n================================================================ \
     \n%s\n%s================================================================\n", txt, buffer);
 }
+
+static inline float determinant_mat2x2f(mat2x2f *m)
+{
+  return m->a1 * m->b2 - m->b1 * m->a2;
+}
+
+static inline float determinant_mat3x3f(mat3x3f *m, uint pivot_row)
+{
+  float res = 0;
+  uint row_ids[] = { 1, 2 };
+  for (uint i = 0; i < pivot_row; i++)
+    row_ids[i]--;
+  for (uint i = 0; i < 3; i++)
+  {
+    float val = m->rows[pivot_row].v[i];
+    if (val == 0)
+      continue;
+    uint col_ids[] = { 1, 2 };
+    for (uint j = 0; j < i; j++)
+      col_ids[j]--;
+    mat2x2f sub_mat =
+    {
+      .a1 = m->rows[row_ids[0]].v[col_ids[0]], .b1 = m->rows[row_ids[0]].v[col_ids[1]],
+      .a2 = m->rows[row_ids[1]].v[col_ids[0]], .b2 = m->rows[row_ids[1]].v[col_ids[1]]
+    };
+    float det = determinant_mat2x2f(&sub_mat);
+    float sig = ((pivot_row + i) % 2 == 0) ? 1 : -1;
+    res += det * val * sig;
+  }
+  return res;
+}
+
+static inline float determinant_mat4x4f(mat4x4f *m, uint pivot_row)
+{
+  float res = 0;
+  uint row_ids[] = { 1, 2, 3 };
+  for (uint i = 0; i < pivot_row; i++)
+    row_ids[i]--;
+  for (uint i = 0; i < 4; i++)
+  {
+    float val = m->rows[pivot_row].v[i];
+    if (val == 0)
+      continue;
+    uint col_ids[] = { 1, 2, 3 };
+    for (uint j = 0; j < i; j++)
+      col_ids[j]--;
+    mat3x3f sub_mat =
+    {
+      .a1 = m->rows[row_ids[0]].v[col_ids[0]], .b1 = m->rows[row_ids[0]].v[col_ids[1]], .c1 = m->rows[row_ids[0]].v[col_ids[2]],
+      .a2 = m->rows[row_ids[1]].v[col_ids[0]], .b2 = m->rows[row_ids[1]].v[col_ids[1]], .c2 = m->rows[row_ids[1]].v[col_ids[2]],
+      .a3 = m->rows[row_ids[2]].v[col_ids[0]], .b3 = m->rows[row_ids[2]].v[col_ids[1]], .c3 = m->rows[row_ids[2]].v[col_ids[2]],
+    };
+    float det = determinant_mat3x3f(&sub_mat, 0);
+    float sig = ((pivot_row + i) % 2 == 0) ? 1 : -1;
+    res += det * val * sig;
+  }
+  return res;
+}
+
+static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
+{
+  if (det_check)
+  {
+    float det = determinant_mat4x4f(&m1, 0);
+    if (det == 0)
+      // TODO: Find a good and cheap way to aknowledge a failed matrix operation (NaN matrix?)
+      return zero_matrix_4x4; 
+  }
+
+  int i, j;
+  // rows x columns
+  float *aux[4] =
+  {
+    (float*)malloc(sizeof(float) * 8),
+    (float*)malloc(sizeof(float) * 8),
+    (float*)malloc(sizeof(float) * 8),
+    (float*)malloc(sizeof(float) * 8)
+  }; 
+  // Setting the aumented matrix
+  aux[0][4] = 1;
+  aux[1][5] = 1;
+  aux[2][6] = 1;
+  aux[3][7] = 1;
+  for (i = 0; i < 4; i++)
+   for (j = 0; j < 4; j++)
+    aux[i][j] = m1.rows[i].v[j];
+  // Interchange the row of matrix,
+  // interchanging of row will start from the last row
+  for (i = 3; i > 0; i--)
+  {
+      if (aux[i - 1][0] < aux[i][0]) {
+          float* temp = aux[i];
+          aux[i] = aux[i - 1];
+          aux[i - 1] = temp;
+      }
+  }
+  // Replace a row by sum of itself and a
+  // constant multiple of another row of the matrix
+  for (int i = 0; i < 4; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      if (j != i)
+      {
+        float temp = aux[j][i] / aux[i][i];
+        for (int k = 0; k < 8; k++) {
+            aux[j][k] -= aux[i][k] * temp;
+        }
+      }
+    }
+  }
+  // Multiply each row by a nonzero integer.
+  // Divide row element by the diagonal element
+  for (int i = 0; i < 4; i++) {
+    float temp = aux[i][i];
+    for (int j = 0; j < 8; j++) {
+
+        aux[i][j] = aux[i][j] / temp;
+    }
+  }
+
+  mat4x4f res =
+  {
+    .a1 = aux[0][0],   .b1 = aux[0][1],   .c1 = aux[0][2],   .d1 =  aux[0][3],
+    .a2 = aux[1][0],   .b2 = aux[1][1],   .c2 = aux[1][2],   .d2 =  aux[1][3],
+    .a3 = aux[2][0],   .b3 = aux[2][1],   .c3 = aux[2][2],   .d3 =  aux[2][3],
+    .a4 = aux[3][0],   .b4 = aux[3][1],   .c4 = aux[3][2],   .d4 =  aux[3][3]
+  };
+  return res;
+}
+
+void test_determinants_calculation()
+{
+  mat2x2f m2x2 = 
+  {
+    .a1 = 3, .b1 = 5,
+    .a2 = 1, .b2 = 2
+  };
+  mat3x3f m3x3 = 
+  {
+    .a1 = 1, .b1 = 3, .c1 = 2,
+    .a2 = 4, .b2 = 1, .c2 = 3,
+    .a3 = 2, .b3 = 5, .c3 = 2
+  };
+  mat4x4f m4x4 = 
+  {
+    .a1 = 3, .b1 = 2, .c1 = 0,  .d1 = 1,
+    .a2 = 4, .b2 = 0, .c2 = 1,  .d2 = 2,
+    .a3 = 3, .b3 = 0, .c3 = 2,  .d3 = 1,
+    .a4 = 9, .b4 = 2, .c4 = 3,  .d4 = 1
+  };
+  log_debug_matx2f(&m2x2, "MAT 2x2");
+  log_debug("DET: %f\n==========\n", determinant_mat2x2f(&m2x2));
+  log_debug_matx3f(&m3x3, "MAT 3x3");
+  log_debug("DET: %f\n==========\n", determinant_mat3x3f(&m3x3, 0));
+  log_debug_matx4f(&m4x4, "MAT 4x4");
+  log_debug("DET: %f\n==========\n", determinant_mat4x4f(&m4x4, 0));
+}
+
+void test_inverse_ccalculation()
+{
+  mat4x4f m4x4 = 
+  {
+    .a1 = 3, .b1 = 2, .c1 = 0,  .d1 = 1,
+    .a2 = 4, .b2 = 0, .c2 = 1,  .d2 = 2,
+    .a3 = 3, .b3 = 0, .c3 = 2,  .d3 = 1,
+    .a4 = 9, .b4 = 2, .c4 = 3,  .d4 = 1
+  };
+  log_debug_matx4f(&m4x4, "Original Mat");
+  mat4x4f inverted = inverse_mat4x4f(m4x4, false);
+  log_debug_matx4f(&inverted, "Inverted Mat");
+  mat4x4f prod = mat4x4f_prod(inverted, m4x4);
+  log_debug_matx4f(&prod, "Original x Inverted (Supposedly the identity matrix)");
+}
+
+
 
 #endif

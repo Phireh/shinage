@@ -268,10 +268,10 @@ void rotate_matrix(axis3f_t rot_axis, float angle)
     // will be performed around it. This is the transformation that won't be undone
     mat4x4f rotation_matrix_around_z =
     {
-        .a1 = cos(angle),    .b1 = -sin(angle),  .c1 = 0.0f,         .d1 =  0.0f,
-        .a2 = sin(angle),    .b2 = cos(angle) ,  .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = 0.0f,        .b3 = 0.0f,       .c3 = 1.0f,         .d3 =  0.0f,
-        .a4 = 0.0f,        .b4 = 0.0f,       .c4 = 0.0f,         .d4 =  1.0f
+        .a1 = cos(angle),  .b1 = -sin(angle),  .c1 = 0.0f,  .d1 =  0.0f,
+        .a2 = sin(angle),  .b2 = cos(angle) ,  .c2 = 0.0f,  .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = 0.0f,         .c3 = 1.0f,  .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,         .c4 = 0.0f,  .d4 =  1.0f
     };
     aux = mat4x4f_prod(aux, rotation_matrix_around_z);
 
