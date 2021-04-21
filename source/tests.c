@@ -20,7 +20,7 @@
 int mat4_eq(mat4x4f m1, mat4x4f m2)
 {
     for (int i = 0; i < 16; ++i)
-        if (abs(m1.v[i] - m2.v[i]) > epsilon)
+        if (fabs(m1.v[i] - m2.v[i]) > epsilon)
         {
             log_detail("At position %d -> %f should be equal to %f", i, m1.v[i], m2.v[i]);
             return 0;
@@ -33,7 +33,7 @@ int vec4_eq(vec4f v1, vec4f v2)
 {
     int res = 1;
     for (int i = 0; i < 4; ++i)
-        if (abs(v1.v[i] - v2.v[i]) > epsilon)
+        if (fabs(v1.v[i] - v2.v[i]) > epsilon)
         {
             log_detail("At position %d -> %f should be equal to %f", i, v1.v[i], v2.v[i]);
             res = 0;
@@ -46,7 +46,7 @@ int vec3_eq(vec3f v1, vec3f v2)
 {
     int res = 1;
     for (int i = 0; i < 3; ++i)
-        if (abs(v1.v[i] - v2.v[i]) > epsilon)
+        if (fabs(v1.v[i] - v2.v[i]) > epsilon)
         {
             log_detail("At position %d -> %f should be equal to %f", i, v1.v[i], v2.v[i]);
             res = 0;
