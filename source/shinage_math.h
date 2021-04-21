@@ -144,6 +144,7 @@ const mat4x4f zero_matrix_4x4 = {
 };
 
 const vec3f up_vector = { .x = 0, .y = 1, .z = 0 };
+const vec3f up_vector_alt = { .x = 0, .y = 0, .z = 1 };
 
 static inline float deg_to_rad(float degrees)
 {
@@ -453,9 +454,6 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
   };
   for (i = 0; i < 4; i++)
     memset(aux[i], 0.0f, sizeof(float) * 8);
-  for (i = 0; i < 4; i++)
-   for (j = 0; j < 8; j++)
-    log_debug("%d, %d => %f", i, j, aux[i][j]);
   // Setting the aumented matrix
   aux[0][4] = 1;
   aux[1][5] = 1;

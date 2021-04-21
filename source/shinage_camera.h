@@ -35,7 +35,11 @@ void build_matrices()
 */
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
-    mat4x4f vmatrix = identity_matrix_4x4;
+    if (!active_mat)
+        return;
+
+    pop(active_mat);
+    mat4x4f mat = identity_matrix_4x4;
     // The camera is brought to the origin
     mat4x4f translation_matrix =
     {
@@ -44,7 +48,7 @@ void look_at(vec3f e, vec3f poi, vec3f up)
         .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  e.z,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
-    vmatrix = mat4x4f_prod(vmatrix, translation_matrix);
+    mat = mat4x4f_prod(mat, translation_matrix);
 
     // The LOOK vector is rotated so it overlaps with the Z axis
     vec3f look = normalize3f(diff3f(poi, e));
@@ -71,7 +75,7 @@ void look_at(vec3f e, vec3f poi, vec3f up)
         .a3 = -sin(-lon),    .b3 = 0.0f,      .c3 = cos(-lon),     .d3 =  0.0f,
         .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
     };
-    vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_lon);
+    mat = mat4x4f_prod(mat, rotation_matrix_lon);
     mat4x4f rotation_matrix_lat =
     {
         .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
@@ -79,7 +83,7 @@ void look_at(vec3f e, vec3f poi, vec3f up)
         .a3 = 0.0f,        .b3 = sin(-lat),  .c3 = cos(-lat),  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
     };
-    vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_lat);
+    mat = mat4x4f_prod(mat, rotation_matrix_lat);
    
     // Now the UP vector (perpendicular to the LOOK vector) is rotated so it overlaps with the Y axis
     // To get this UP vector we first cross_product3f the global UP given as a parameter with
@@ -102,9 +106,9 @@ void look_at(vec3f e, vec3f poi, vec3f up)
         .a3 = 0.0f,          .b3 = 0.0f,          .c3 = 1.0f,  .d3 =  0.0f,
         .a4 = 0.0f,          .b4 = 0.0f,          .c4 = 0.0f,  .d4 =  1.0f
     };
-    vmatrix = mat4x4f_prod(vmatrix, rotation_matrix_around_z);
+    mat = mat4x4f_prod(mat, rotation_matrix_around_z);
 
-    push(mats.view, vmatrix);
+    push(active_mat, mat);
 }
 
 /*
@@ -113,17 +117,22 @@ void look_at(vec3f e, vec3f poi, vec3f up)
 */
 void perspective_camera(float fov_y, float ar, float n, float f)
 {
+    if (!active_mat)
+        return;
+
+    pop(active_mat);
+
     float tan_fov = tan( fov_y * 0.5 );
     float z_range = n - f;
 
-    mat4x4f pmatrix =
+    mat4x4f mat =
     {
         .a1 = 1.0 / (tan_fov * ar),  .b1 = 0.0f,           .c1 = 0.0f,                .d1 = 0.0f,
         .a2 = 0.0f,                  .b2 = 1.0 / tan_fov,  .c2 = 0.0f,                .d2 = 0.0f,
         .a3 = 0.0f,                  .b3 = 0.0f,           .c3 = (f + n) / z_range,   .d3 = 2*f*n / z_range,
         .a4 = 0.0f,                  .b4 = 0.0f,           .c4 = -1.0,                .d4 = 0.0f
     };
-    push(mats.projection, pmatrix);
+    push(active_mat, mat);
 }
 
 void set_mat(matrix_t mat)
@@ -299,6 +308,66 @@ void pop_matrix()
         return;
 
     pop(active_mat);
+}
+
+void add_roll(float angle)
+{
+    if (!active_mat)
+        return;
+    /*mat4x4f mat = peek(active_mat);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, true);
+
+    vec3f pos = { .x = inv_mat.a3, .y = inv_mat.b3, .z = -inv_mat.c3 };
+    log_debug_matx4f(&mat, "VIEW");
+    log_debug_matx4f(&inv_mat, "Inverse of VIEW");*/
+  
+    vec3f pos = { .x = 0, .y = 0, .z = -1 };
+    axis3f_t rot_axis =
+    {
+        .vec = { .x = 1.0f, .y = 0, .z = 0 },
+        .pnt = pos
+    };
+    rotate_matrix(rot_axis, angle);
+}
+
+void add_pitch(float angle)
+{
+    if (!active_mat)
+        return;
+   /* mat4x4f mat = peek(active_mat);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, true);
+
+    vec3f pos = { .x = inv_mat.a3, .y = inv_mat.b3, .z = -inv_mat.c3 };
+    log_debug_matx4f(&mat, "VIEW");
+    log_debug_matx4f(&inv_mat, "Inverse of VIEW");*/
+  
+    vec3f pos = { .x = 0, .y = 0, .z = -1 };
+    axis3f_t rot_axis =
+    {
+        .vec = { .x = 0, .y = 1.0f, .z = 0 },
+        .pnt = pos
+    };
+    rotate_matrix(rot_axis, angle);
+}
+
+void add_yaw(float angle)
+{
+    if (!active_mat)
+        return;
+    /*mat4x4f mat = peek(active_mat);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, true);
+
+    vec3f pos = { .x = inv_mat.a3, .y = inv_mat.b3, .z = -inv_mat.c3 };
+    log_debug_matx4f(&mat, "VIEW");
+    log_debug_matx4f(&inv_mat, "Inverse of VIEW");*/
+  
+    vec3f pos = { .x = 0, .y = 0, .z = -1 };
+    axis3f_t rot_axis =
+    {
+        .vec = { .x = 0, .y = 0, .z = 1.0f },
+        .pnt = pos
+    };
+    rotate_matrix(rot_axis, angle);
 }
 
 

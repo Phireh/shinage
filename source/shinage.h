@@ -182,5 +182,6 @@ void test_entity_logic(player_input_t *input, entity_t *e);
 void test_cube_logic(player_input_t *input, entity_t *e);
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);
 void draw_bouncing_cube_scene();
+void draw_static_cube_scene();
 
 #endif

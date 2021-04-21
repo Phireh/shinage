@@ -486,7 +486,22 @@ int main(int argc, char *argv[])
       glEnable(GL_DEPTH_TEST);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      draw_bouncing_cube_scene();
+      static bool init_mats = false;
+      if (!init_mats)
+      {
+        build_matrices();
+        set_mat(PROJECTION);
+        init_mats = true;
+        float ar = (float)x11_window_width / (float)x11_window_height;
+        perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
+        set_mat(VIEW);
+        vec3f eye = { .x = 0, .y = 0, .z = -1 };
+        vec3f poi = { .x = 0, .y = 0, .z = 0 };
+        look_at(eye, poi, up_vector_alt);
+      }
+
+      //draw_bouncing_cube_scene();
+      draw_static_cube_scene();
 
       glXSwapBuffers(x11_display, x11_window);
 
@@ -642,6 +657,37 @@ void draw_gl_cube(void)
 
 }
 
+void draw_static_cube_scene()
+{
+  // TODO: This might not be the most straightforward way to reset everything, but it will do for now
+  // Reseting drawing utilities 
+  // Resets the stacks and 
+  //build_matrices();
+  // The matrix affected by the transformations will be the MODEL matrix
+  set_mat(MODEL);
+  /*float ar = (float)x11_window_width / (float)x11_window_height;
+  perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
+  vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
+  vec3f poi = { .x = 0, .y = 0, .z = 0 };*/
+
+  /* TODO: With an unrestricted free camera, the up vector (0,1,0) is not enough for all cases.
+     Specifically, if (0,1,0) is parallel to the (poi - eye) vector, the cross product is undefined.
+     We should detect this case and use a different, non-paralel up vector, like (0,0,1) */
+  //look_at(eye, poi, up_vector);
+
+  push_matrix();
+    vec3f scale = { .x = 0.5f, .y = 0.5f, .z = 0.5f };
+    scale_matrix(scale);
+    axis3f_t rot_axis =
+    { 
+      .vec = { .x = 0, .y = 1, .z = 0 },
+      .pnt = { .x = 0, .y = 0, .z = 0 }
+    };
+    rotate_matrix(rot_axis, M_PI / 4);
+    draw_gl_cube();
+  pop_matrix();
+}
+
 void draw_bouncing_cube_scene()
 {
   // Dynamic values for a cool animation
@@ -679,18 +725,18 @@ void draw_bouncing_cube_scene()
   // TODO: This might not be the most straightforward way to reset everything, but it will do for now
   // Reseting drawing utilities 
   // Resets the stacks and 
-  build_matrices();
+  //build_matrices();
   // The matrix affected by the transformations will be the MODEL matrix
   set_mat(MODEL);
-  float ar = (float)x11_window_width / (float)x11_window_height;
+  /*float ar = (float)x11_window_width / (float)x11_window_height;
   perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
   vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
-  vec3f poi = { .x = 0, .y = 0, .z = 0 };
+  vec3f poi = { .x = 0, .y = 0, .z = 0 };*/
 
   /* TODO: With an unrestricted free camera, the up vector (0,1,0) is not enough for all cases.
      Specifically, if (0,1,0) is parallel to the (poi - eye) vector, the cross product is undefined.
      We should detect this case and use a different, non-paralel up vector, like (0,0,1) */
-  look_at(eye, poi, up_vector);
+  //look_at(eye, poi, up_vector);
 
   /* Pushing the matrix makes a copy of the current matrix and stacks it over. The matrix on top will be the 
      one to be used */
@@ -822,22 +868,59 @@ unsigned int build_shader(char *source, int type)
 void test_cube_logic(player_input_t *input, entity_t *e)
 {
     bool right   = is_pressed(input->right);
-    /*bool left    = is_pressed(input->left);
+    bool left    = is_pressed(input->left);
     bool forward = is_pressed(input->forward);
     bool back    = is_pressed(input->back);
     bool up      = is_pressed(input->up);
     bool down    = is_pressed(input->down);
-    int  mouse_x = input->cursor_x_delta;
+    /*int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;*/
     bool right_click   = is_just_pressed(input->mouse_left_click);
+    float rps = M_PI / 2;
+    float angle = rps * get_delta_time();
     if (right)
     {
-      log_debug("Ye [%f]", e->position.x);
+      set_mat(VIEW);
+      add_roll(angle);
+      log_debug("Added roll of %f", angle);
+    }
+    if (left)
+    {
+      set_mat(VIEW);
+      add_roll(-angle);
+      log_debug("Added roll of %f", -angle);
+    }
+    if (forward)
+    {
+      set_mat(VIEW);
+      add_pitch(angle);
+      log_debug("Added pitch of %f", angle);
+    }
+    if (back)
+    {
+      set_mat(VIEW);
+      add_pitch(-angle);
+      log_debug("Added pitch of %f", -angle);
+    }
+    if (up)
+    {
+      set_mat(VIEW);
+      add_yaw(angle);
+      log_debug("Added yae of %f", angle);
+    }
+    if (down)
+    {
+      set_mat(VIEW);
+      add_yaw(-angle);
+      log_debug("Added yaw of %f", -angle);
     }
     if (right_click)
     {
       show_cpu_calculated_matrix = true;
     }
+
+    if (false) // TODO: Placeholder to please the compiler
+      log_debug("Ye [%f]", e->position.x);
 }
 
 int link_gl_functions(void)
