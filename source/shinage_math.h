@@ -445,10 +445,10 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
   // rows x columns
   float *aux[4] =
   {
-    (float*)malloc(sizeof(float) * 8),
-    (float*)malloc(sizeof(float) * 8),
-    (float*)malloc(sizeof(float) * 8),
-    (float*)malloc(sizeof(float) * 8)
+    (float*)alloca(sizeof(float) * 8),
+    (float*)alloca(sizeof(float) * 8),
+    (float*)alloca(sizeof(float) * 8),
+    (float*)alloca(sizeof(float) * 8)
   }; 
   // Setting the aumented matrix
   aux[0][4] = 1;
