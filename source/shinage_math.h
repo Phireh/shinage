@@ -450,7 +450,12 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
     (float*)alloca(sizeof(float) * 8),
     (float*)alloca(sizeof(float) * 8),
     (float*)alloca(sizeof(float) * 8)
-  }; 
+  };
+  for (i = 0; i < 4; i++)
+    memset(aux[i], 0.0f, sizeof(float) * 8);
+  for (i = 0; i < 4; i++)
+   for (j = 0; j < 8; j++)
+    log_debug("%d, %d => %f", i, j, aux[i][j]);
   // Setting the aumented matrix
   aux[0][4] = 1;
   aux[1][5] = 1;
@@ -546,7 +551,8 @@ void test_inverse_calculation()
   log_debug_matx4f(&m4x4, "Original Mat");
   mat4x4f inverted = inverse_mat4x4f(m4x4, false);
   log_debug_matx4f(&inverted, "Inverted Mat");
-  mat4x4f prod = mat4x4f_prod(inverted, m4x4);
+  //mat4x4f prod = mat4x4f_prod(inverted, m4x4);
+  mat4x4f prod = mat4x4f_prod(m4x4, inverted);
   log_debug_matx4f(&prod, "Original x Inverted (Supposedly the identity matrix)");
 }
 
