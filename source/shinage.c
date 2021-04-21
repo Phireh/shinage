@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
       if (!tested)
       {
         //test_determinants_calculation();
-        test_inverse_ccalculation();
+        test_inverse_calculation();
         tested = true;
       }
   }

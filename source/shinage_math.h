@@ -459,8 +459,8 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
   for (i = 0; i < 4; i++)
    for (j = 0; j < 4; j++)
     aux[i][j] = m1.rows[i].v[j];
-  // Interchange the row of matrix,
-  // interchanging of row will start from the last row
+  /* Interchange the row of matrix,
+     interchanging of row will start from the last row */
   for (i = 3; i > 0; i--)
   {
       if (aux[i - 1][0] < aux[i][0]) {
@@ -469,8 +469,9 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
           aux[i - 1] = temp;
       }
   }
-  // Replace a row by sum of itself and a
-  // constant multiple of another row of the matrix
+
+  /* Replace a row by sum of itself and a
+     constant multiple of another row of the matrix */
   for (int i = 0; i < 4; i++)
   {
     for (int j = 0; j < 4; j++)
@@ -484,8 +485,8 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
       }
     }
   }
-  // Multiply each row by a nonzero integer.
-  // Divide row element by the diagonal element
+  /* Multiply each row by a nonzero integer.
+     Divide row element by the diagonal element */
   for (int i = 0; i < 4; i++) {
     float temp = aux[i][i];
     for (int j = 0; j < 8; j++) {
@@ -496,11 +497,12 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
 
   mat4x4f res =
   {
-    .a1 = aux[0][0],   .b1 = aux[0][1],   .c1 = aux[0][2],   .d1 =  aux[0][3],
-    .a2 = aux[1][0],   .b2 = aux[1][1],   .c2 = aux[1][2],   .d2 =  aux[1][3],
-    .a3 = aux[2][0],   .b3 = aux[2][1],   .c3 = aux[2][2],   .d3 =  aux[2][3],
-    .a4 = aux[3][0],   .b4 = aux[3][1],   .c4 = aux[3][2],   .d4 =  aux[3][3]
+    .a1 = aux[0][4],   .b1 = aux[0][5],   .c1 = aux[0][6],   .d1 =  aux[0][7],
+    .a2 = aux[1][4],   .b2 = aux[1][5],   .c2 = aux[1][6],   .d2 =  aux[1][7],
+    .a3 = aux[2][4],   .b3 = aux[2][5],   .c3 = aux[2][6],   .d3 =  aux[2][7],
+    .a4 = aux[3][4],   .b4 = aux[3][5],   .c4 = aux[3][6],   .d4 =  aux[3][7]
   };
+
   return res;
 }
 
@@ -532,7 +534,7 @@ void test_determinants_calculation()
   log_debug("DET: %f\n==========\n", determinant_mat4x4f(&m4x4, 0));
 }
 
-void test_inverse_ccalculation()
+void test_inverse_calculation()
 {
   mat4x4f m4x4 = 
   {
