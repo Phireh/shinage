@@ -2,6 +2,7 @@
 #define SHINAGE_MATH_H
 #include <math.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "shinage_debug.h"
 
 /* Rough estimate of an epsilon value based on the ~7 digit precision of 
