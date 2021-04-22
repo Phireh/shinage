@@ -665,7 +665,7 @@ void draw_static_cubes_scene(uint segments)
     axis3f_t rot_axis =
     { 
       .vec = { .x = 0, .y = 0, .z = 1 },
-      .pnt = { .x = 0, .y = 0, .z = 1 }
+      .pnt = { .x = 0, .y = 0, .z = -1 }
     };
     float rot_angle = 2 * M_PI / segments;
     vec3f trans_from_origin = { .x = 0, .y = 2, .z = 0 };
@@ -675,7 +675,7 @@ void draw_static_cubes_scene(uint segments)
         translate_matrix(trans_from_origin);
         vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube(colours[i % 2 + 1]);
+        draw_gl_cube(colours[1]);
       pop_matrix();
       rotate_matrix(rot_axis, rot_angle);
     }
@@ -688,7 +688,7 @@ void draw_static_cubes_scene(uint segments)
         translate_matrix(trans_from_origin);
         vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube(colours[i % 2 + 3]);
+        draw_gl_cube(colours[2]);
       pop_matrix();
       rotate_matrix(rot_axis, rot_angle);
     }
@@ -701,7 +701,7 @@ void draw_static_cubes_scene(uint segments)
         translate_matrix(trans_from_origin);
         vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube(colours[i % 2 + 5]);
+        draw_gl_cube(colours[4]);
       pop_matrix();
       rotate_matrix(rot_axis, rot_angle);
     }
@@ -899,37 +899,37 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     {
       set_mat(VIEW);
       add_roll(angle);
-      log_debug("Added roll of %f", angle);
+      //log_debug("Added roll of %f", angle);
     }
     if (left)
     {
       set_mat(VIEW);
       add_roll(-angle);
-      log_debug("Added roll of %f", -angle);
+      //log_debug("Added roll of %f", -angle);
     }
     if (forward)
     {
       set_mat(VIEW);
       add_pitch(angle);
-      log_debug("Added pitch of %f", angle);
+      //log_debug("Added pitch of %f", angle);
     }
     if (back)
     {
       set_mat(VIEW);
       add_pitch(-angle);
-      log_debug("Added pitch of %f", -angle);
+      //log_debug("Added pitch of %f", -angle);
     }
     if (up)
     {
       set_mat(VIEW);
       add_yaw(angle);
-      log_debug("Added yae of %f", angle);
+      //log_debug("Added yae of %f", angle);
     }
     if (down)
     {
       set_mat(VIEW);
       add_yaw(-angle);
-      log_debug("Added yaw of %f", -angle);
+      //log_debug("Added yaw of %f", -angle);
     }
     if (right_click)
     {

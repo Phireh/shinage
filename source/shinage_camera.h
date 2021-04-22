@@ -251,7 +251,7 @@ static inline vec3f get_position()
         return zero_vec3f;
 
     mat4x4f mat = peek(active_mat);
-    mat4x4f inv_mat = inverse_mat4x4f(mat, true, false);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, true, true);
     vec3f pos = { .x = inv_mat.d1, .y = inv_mat.d2, .z = inv_mat.d3 };
     return pos;
 }
@@ -261,8 +261,15 @@ void rotate_self(vec3f axis, float angle)
     if (!active_mat)
         return;
 
-    vec3f pos = get_position();
+    mat4x4f mat = peek(active_mat);
+    //vec3f pos = get_position();
+    vec3f pos = { .x = 0, .y = 0, .z = 0 };
+    vec4f axis_ported = { .x = axis.x, .y = axis.y, .z = axis.z, .w = 0 };
+    axis_ported = mat4x4f_vec4f_prod(mat, axis_ported);
+    axis.x = axis_ported.x; axis.y = axis_ported.y; axis.z = axis_ported.z;
 
+    log_debug("Ported vec.: (%f, %f, %f)", axis.x, axis.y, axis.z);
+    log_debug("Pos. from matrix: (%f, %f, %f)", pos.x, pos.y, pos.z);
     axis3f_t rot_axis =
     {
         .vec = axis,
@@ -289,22 +296,55 @@ void pop_matrix()
     pop(active_mat);
 }
 
-void add_roll(float angle)
-{
-    vec3f rot_vec = { .x = 1, .y = 0, .z = 0 };
-    rotate_self(rot_vec, angle);
-}
-
 void add_pitch(float angle)
 {
-    vec3f rot_vec = { .x = 0, .y = 1, .z = 0 };
-    rotate_self(rot_vec, angle);
+    if (!active_mat)
+        return;
+
+    mat4x4f mat = pop(active_mat);
+    mat4x4f rotation_matrix_around_z =
+    {
+        .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
+        .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = sin(angle),  .c3 = cos(angle),  .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
+    };
+    mat = mat4x4f_prod(mat, rotation_matrix_around_z);
+    push(active_mat, mat);
 }
 
 void add_yaw(float angle)
 {
-    vec3f rot_vec = { .x = 0, .y = 0, .z = 1 };
-    rotate_self(rot_vec, angle);
+    if (!active_mat)
+        return;
+
+    mat4x4f mat = pop(active_mat);
+    mat4x4f rotation_matrix_around_z =
+    {
+        .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
+        .a2 = 0.0f,         .b2 = 1.0f,   .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = -sin(angle),  .b3 = 0.0f,   .c3 = cos(angle),   .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,   .c4 = 0.0f,         .d4 =  1.0f
+    };
+    mat = mat4x4f_prod(mat, rotation_matrix_around_z);
+    push(active_mat, mat);
+}
+
+void add_roll(float angle)
+{
+    if (!active_mat)
+        return;
+
+    mat4x4f mat = pop(active_mat);
+    mat4x4f rotation_matrix_around_z =
+    {
+        .a1 = cos(angle),  .b1 = -sin(angle),  .c1 = 0.0f,  .d1 =  0.0f,
+        .a2 = sin(angle),  .b2 = cos(angle) ,  .c2 = 0.0f,  .d2 =  0.0f,
+        .a3 = 0.0f,        .b3 = 0.0f,         .c3 = 1.0f,  .d3 =  0.0f,
+        .a4 = 0.0f,        .b4 = 0.0f,         .c4 = 0.0f,  .d4 =  1.0f
+    };
+    mat = mat4x4f_prod(mat, rotation_matrix_around_z);
+    push(active_mat, mat);
 }
 
 
