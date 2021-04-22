@@ -123,7 +123,7 @@ int main()
     
     /* Expected result of scalar multiplication is the same as previous test */
     mat4x4f m1_t4 = m1_t3;
-    if (mat4_eq(m1_t4, int_mat4x4f_prod(2, m1_t1)))
+    if (mat4_eq(m1_t4, scalar_mat4x4f_prod(2, m1_t1)))
     {
         ++ok_count;
         log_ok("Matrix x scalar multiplication");
@@ -217,7 +217,7 @@ int main()
     /* Matrix with diagonal [ 1, 2 , 3, 4] */
     mat4x4f m1_t10 = { .a1 = 1, .b2 = 2, .c3 = 3, .d4 = 4 };
     /* Determinant should be 24 */
-    if (fabs(determinant_mat4x4f(&m1_t10, 0) - 24.0f) < epsilon)
+    if (fabs(determinant_mat4x4f(m1_t10, 0) - 24.0f) < epsilon)
     {
         ++ok_count;
         log_ok("Matrix determinant");
@@ -231,15 +231,15 @@ int main()
     /* Expected result of inverse matrix */
     mat4x4f m1_t11 = { .a1 = 1, .b2 = 0.5f, .c3 = (1.0f/3.0f), .d4 = 0.25f };
 
-    if (mat4_eq(inverse_mat4x4f(m1_t10, 0), m1_t11))
+    if (mat4_eq(inverse_mat4x4f(m1_t10, 0, 1), m1_t11))
     {
         ++ok_count;
-        log_ok("Matrix inverse 1/2");
+        log_ok("Matrix inverse Gauss 1/2");
     }
     else
     {
         ++fail_count;
-        log_fail("Matrix inverse 1/2");
+        log_fail("Matrix inverse Gauss 1/2");
     }
 
     mat4x4f m2_t11 = {
@@ -257,15 +257,37 @@ int main()
         .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
     };
     
-    if (mat4_eq(inverse_mat4x4f(m2_t11, 0), m3_t11))
+    if (mat4_eq(inverse_mat4x4f(m2_t11, 0, 1), m3_t11))
     {
         ++ok_count;
-        log_ok("Matrix inverse 2/2");
+        log_ok("Matrix inverse Gauss 2/2");
     }
     else
     {
         ++fail_count;
-        log_fail("Matrix inverse 2/2");
+        log_fail("Matrix inverse Gauss 2/2");
+    }
+
+    if (mat4_eq(inverse_mat4x4f(m1_t10, 0, 0), m1_t11))
+    {
+        ++ok_count;
+        log_ok("Matrix inverse non-Gauss 1/2");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("Matrix inverse non-Gauss 1/2");
+    }
+
+    if (mat4_eq(inverse_mat4x4f(m2_t11, 0, 0), m3_t11))
+    {
+        ++ok_count;
+        log_ok("Matrix inverse non-Gauss 2/2");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("Matrix inverse non-Gauss 2/2");
     }
     
     
