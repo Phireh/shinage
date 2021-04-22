@@ -497,11 +497,11 @@ int main(int argc, char *argv[])
         set_mat(VIEW);
         vec3f eye = { .x = 0, .y = 0, .z = -1 };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
-        look_at(eye, poi, up_vector_alt);
+        look_at(eye, poi, up_vector);
       }
 
       //draw_bouncing_cube_scene();
-      draw_static_cube_scene();
+      draw_static_cubes_scene();
 
       glXSwapBuffers(x11_display, x11_window);
 
@@ -657,35 +657,32 @@ void draw_gl_cube(void)
 
 }
 
-void draw_static_cube_scene()
+void draw_static_cubes_scene()
 {
-  // TODO: This might not be the most straightforward way to reset everything, but it will do for now
-  // Reseting drawing utilities 
-  // Resets the stacks and 
-  //build_matrices();
-  // The matrix affected by the transformations will be the MODEL matrix
   set_mat(MODEL);
-  /*float ar = (float)x11_window_width / (float)x11_window_height;
-  perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
-  vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
-  vec3f poi = { .x = 0, .y = 0, .z = 0 };*/
-
-  /* TODO: With an unrestricted free camera, the up vector (0,1,0) is not enough for all cases.
-     Specifically, if (0,1,0) is parallel to the (poi - eye) vector, the cross product is undefined.
-     We should detect this case and use a different, non-paralel up vector, like (0,0,1) */
-  //look_at(eye, poi, up_vector);
-
   push_matrix();
-    vec3f scale = { .x = 0.5f, .y = 0.5f, .z = 0.5f };
-    scale_matrix(scale);
+    // The center of the scen will be (0 , 0, -1)
+    vec3f trans_the_origin = { .x = 0, .y = 0, .z = 1 };
+    translate_matrix(trans_the_origin);
+
     axis3f_t rot_axis =
     { 
-      .vec = { .x = 0, .y = 1, .z = 0 },
-      .pnt = { .x = 0, .y = 0, .z = 0 }
+      .vec = { .x = 0, .y = 0, .z = 1 },
+      .pnt = { .x = 0, .y = 0, .z = 1 }
     };
-    rotate_matrix(rot_axis, M_PI / 4);
-    draw_gl_cube();
-  pop_matrix();
+    float rot_angle = 2 * M_PI / 8;
+    vec3f trans_from_origin = { .x = 0, .y = 1.25f, .z = 0 };
+    for (int i = 0; i < 8; i++)
+    {
+      push_matrix();
+        translate_matrix(trans_from_origin);
+        vec3f scale = { .x = 0.4f, .y = 0.4f, .z = 0.4f };
+        scale_matrix(scale);
+        draw_gl_cube();
+      pop_matrix();
+      rotate_matrix(rot_axis, rot_angle);
+    }
+    pop_matrix();
 }
 
 void draw_bouncing_cube_scene()
@@ -697,23 +694,23 @@ void draw_bouncing_cube_scene()
   if (scale_fact < 0.25f || scale_fact > 0.75f)
     scale_delta = -scale_delta;
 
-  static float x_pos = 0;
+  static float x_pos = 0.0f;
   static float x_pos_delta = -0.0005f;
-  static float y_pos = 0.07;
+  static float y_pos = 0.0f;
   static float y_pos_delta = -0.0005f;
-  static float z_pos = -0.6;
+  static float z_pos = 0.75f;
   static float z_pos_delta = -0.0005f;
   
   // x_pos += x_pos_delta;
-  if (x_pos < -0.15f || x_pos > 0.15f)
+  if (x_pos < -0.25f || x_pos > 0.25f)
     x_pos_delta = -x_pos_delta;
   // y_pos += y_pos_delta;
   
-  if (y_pos < -0.25f || y_pos > 0.15f)
+  if (y_pos < -0.25f || y_pos > 0.25f)
     y_pos_delta = -y_pos_delta;
   
   z_pos += z_pos_delta;
-  if (z_pos < -0.15f || z_pos > 0.15f)
+  if (z_pos < 0.5f || z_pos > 1.0f)
     z_pos_delta = -z_pos_delta;
 
   static float rot_fact = 0.75f;
@@ -722,32 +719,17 @@ void draw_bouncing_cube_scene()
   if (rot_fact > M_PI * 2)
     rot_fact = 0;
 
-  // TODO: This might not be the most straightforward way to reset everything, but it will do for now
-  // Reseting drawing utilities 
-  // Resets the stacks and 
-  //build_matrices();
-  // The matrix affected by the transformations will be the MODEL matrix
   set_mat(MODEL);
-  /*float ar = (float)x11_window_width / (float)x11_window_height;
-  perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
-  vec3f eye = { .x = 0, .y = 0, .z = -1.0f };
-  vec3f poi = { .x = 0, .y = 0, .z = 0 };*/
-
-  /* TODO: With an unrestricted free camera, the up vector (0,1,0) is not enough for all cases.
-     Specifically, if (0,1,0) is parallel to the (poi - eye) vector, the cross product is undefined.
-     We should detect this case and use a different, non-paralel up vector, like (0,0,1) */
-  //look_at(eye, poi, up_vector);
-
   /* Pushing the matrix makes a copy of the current matrix and stacks it over. The matrix on top will be the 
      one to be used */
-    push_matrix();
+  push_matrix();
     vec3f scale = { .x = scale_fact, .y = scale_fact, .z = scale_fact };
     scale_matrix(scale);
     vec3f translation = { .x = x_pos, .y = y_pos, .z = z_pos };
     translate_matrix(translation);
     axis3f_t rot_axis =
     { 
-      .vec = { .x = 1.0f, .y = 0.75, .z = 1.0f },
+      .vec = { .x = 1.0f, .y = 0.75f, .z = 1.0f },
       .pnt = { .x = 0, .y = 0, .z = 0 }
     };
     rotate_matrix(rot_axis, rot_fact);

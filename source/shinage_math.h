@@ -438,6 +438,7 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m1, bool det_check)
   if (det_check)
   {
     float det = determinant_mat4x4f(&m1, 0);
+    log_debug("Det value = %f", det);
     if (det == 0)
       // TODO: Find a good and cheap way to aknowledge a failed matrix operation (NaN matrix?)
       return zero_matrix_4x4; 
@@ -547,10 +548,24 @@ void test_inverse_calculation()
     .a4 = 9, .b4 = 2, .c4 = 3,  .d4 = 1
   };
   log_debug_matx4f(&m4x4, "Original Mat");
-  mat4x4f inverted = inverse_mat4x4f(m4x4, false);
+  mat4x4f inverted = inverse_mat4x4f(m4x4, true);
   log_debug_matx4f(&inverted, "Inverted Mat");
   //mat4x4f prod = mat4x4f_prod(inverted, m4x4);
   mat4x4f prod = mat4x4f_prod(m4x4, inverted);
+  log_debug_matx4f(&prod, "Original x Inverted (Supposedly the identity matrix)");
+
+  mat4x4f m4x4_2 = 
+  {
+    .a1 = -1, .b1 = 0, .c1 = 0,  .d1 = 0,
+    .a2 = 0,  .b2 = 1, .c2 = 0,  .d2 = 0,
+    .a3 = 0,  .b3 = 0, .c3 = -1, .d3 = -1,
+    .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
+  };
+  log_debug_matx4f(&m4x4_2, "Original Mat");
+  inverted = inverse_mat4x4f(m4x4_2, true);
+  log_debug_matx4f(&inverted, "Inverted Mat");
+  //mat4x4f prod = mat4x4f_prod(inverted, m4x4);
+  prod = mat4x4f_prod(m4x4, inverted);
   log_debug_matx4f(&prod, "Original x Inverted (Supposedly the identity matrix)");
 }
 
