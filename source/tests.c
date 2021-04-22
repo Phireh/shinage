@@ -289,8 +289,49 @@ int main()
         ++fail_count;
         log_fail("Matrix inverse non-Gauss 2/2");
     }
-    
-    
+
+    /* Expected view matrix for a camera in (0,0,1) looking at (0,0,0) */
+    mat4x4f m1_t12 = {
+        .a1 = 1,
+        .b2 = 1,
+        .c3 = 1,
+        .c4 = -1, .d4 = 1
+    };
+
+    build_matrices();
+    set_mat(VIEW);
+
+    vec3f camera_pos = { .x = 0, .y = 0, .z = 1 };
+    vec3f target = { .x = 0, .y = 0, .z = 0 };
+    vec3f up = { .x = 0, .y = 1, .z = 0 };
+    look_at(camera_pos, target, up);
+
+    mat4x4f m2_t12 = peek(mats.view);
+
+    if (mat4_eq(m1_t12, m2_t12))
+    {
+        ++ok_count;
+        log_ok("View matrix");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("View matrix");
+    }
+
+    /* Expected result of asking for the camera position */
+    vec3f v1_t13 = camera_pos;
+
+    if (vec3_eq(get_position(), v1_t13))
+    {
+        ++ok_count;
+        log_ok("get_position");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("get_position");
+    }
 
     log_summary("%d successful tests, %d failed tests", ok_count, fail_count);
     
