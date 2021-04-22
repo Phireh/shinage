@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
         float ar = (float)x11_window_width / (float)x11_window_height;
         perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
         set_mat(VIEW);
-        vec3f eye = { .x = 0, .y = 0, .z = -1 };
+        vec3f eye = { .x = 0, .y = 3, .z = -3 };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
         look_at(eye, poi, up_vector);
       }
@@ -656,10 +656,10 @@ void draw_static_cubes_scene(uint segments)
     // The center of the scen will be (0 , 0, -1)
     vec3f trans_the_origin = { .x = 0, .y = 0, .z = -1 };
     translate_matrix(trans_the_origin);
-    vec3f scale = { .x = 0.05f, .y = 0.05f, .z = 0.05f };
+    vec3f scale = { .x = 0.1f, .y = 0.1f, .z = 0.1f };
     scale_matrix(scale);
     draw_gl_cube(colours[8]); // The center
-    scale.x = 20; scale.y = 20; scale.z = 20;
+    scale.x = 10; scale.y = 10; scale.z = 10;
     scale_matrix(scale);
 
     axis3f_t rot_axis =
