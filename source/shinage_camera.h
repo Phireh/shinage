@@ -251,11 +251,12 @@ void rotate_self(vec3f axis, float angle)
         return;
 
     mat4x4f mat = peek(active_mat);
-    mat4x4f inv_mat = inverse_mat4x4f(mat, false);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, true, false);
     log_debug_matx4f(&mat, "VIEW");
     log_debug_matx4f(&inv_mat, "Inverse of VIEW");
 
-    vec3f pos = { .x = inv_mat.a3, .y = inv_mat.b3, .z = inv_mat.c3 };
+    vec3f pos = { .x = inv_mat.d1, .y = inv_mat.d2, .z = inv_mat.d3 };
+
 
     axis3f_t rot_axis =
     {

@@ -501,7 +501,7 @@ int main(int argc, char *argv[])
       }
 
       //draw_bouncing_cube_scene();
-      draw_static_cubes_scene();
+      draw_static_cubes_scene(8);
 
       glXSwapBuffers(x11_display, x11_window);
 
@@ -559,7 +559,7 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
 }
 
 bool show_cpu_calculated_matrix;
-void draw_gl_cube(void)
+void draw_gl_cube(float *colours)
 {
     float vertices[] = {
        0.5f,   0.5f,   0.5f,
@@ -570,17 +570,6 @@ void draw_gl_cube(void)
        0.5f,   -0.5f,  -0.5f,
        -0.5f,  -0.5f,  -0.5f,
        -0.5f,  -0.5f,  0.5f,
-    };
-
-    float colours[] = {
-      0,   0,   0,  // Black
-      0,   0,   1,  // Blue
-      0,   1,   0,  // Green
-      0,   1,   1,  // Cyan
-      1,   0,   0,  // Red
-      1,   0,   1,  // Magenta
-      1,   1,   0,  // Yellow
-      1,   1,   1   // White
     };
 
     uint num_indices = 36;
@@ -636,7 +625,7 @@ void draw_gl_cube(void)
       glGenBuffers(1, &colour_bo);
     
     glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), colours, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(1);
 
@@ -657,12 +646,24 @@ void draw_gl_cube(void)
 
 }
 
-void draw_static_cubes_scene()
+void draw_static_cubes_scene(uint segments)
 {
+  float colours[8][24] =
+  {
+    {0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0},  // Black
+    {0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1},  // Blue
+    {0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0},  // Green
+    {0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1},  // Cyan
+    {1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0},  // Red
+    {1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1},  // Magenta
+    {1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0},  // Yellow
+    {1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1}   // White
+  };
+
   set_mat(MODEL);
   push_matrix();
     // The center of the scen will be (0 , 0, -1)
-    vec3f trans_the_origin = { .x = 0, .y = 0, .z = 1 };
+    vec3f trans_the_origin = { .x = 0, .y = 0, .z = -1 };
     translate_matrix(trans_the_origin);
 
     axis3f_t rot_axis =
@@ -670,23 +671,60 @@ void draw_static_cubes_scene()
       .vec = { .x = 0, .y = 0, .z = 1 },
       .pnt = { .x = 0, .y = 0, .z = 1 }
     };
-    float rot_angle = 2 * M_PI / 8;
-    vec3f trans_from_origin = { .x = 0, .y = 1.25f, .z = 0 };
-    for (int i = 0; i < 8; i++)
+    float rot_angle = 2 * M_PI / segments;
+    vec3f trans_from_origin = { .x = 0, .y = 2, .z = 0 };
+    for (uint i = 0; i < segments; i++)
     {
       push_matrix();
         translate_matrix(trans_from_origin);
-        vec3f scale = { .x = 0.4f, .y = 0.4f, .z = 0.4f };
+        vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube();
+        draw_gl_cube(colours[i % 2 + 1]);
       pop_matrix();
       rotate_matrix(rot_axis, rot_angle);
     }
-    pop_matrix();
+
+    rot_axis.vec.y = 1; rot_axis.vec.z = 0;
+    trans_from_origin.y = 0; trans_from_origin.x = 2.5f;
+    for (uint i = 0; i < segments; i++)
+    {
+      push_matrix();
+        translate_matrix(trans_from_origin);
+        vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
+        scale_matrix(scale);
+        draw_gl_cube(colours[i % 2 + 3]);
+      pop_matrix();
+      rotate_matrix(rot_axis, rot_angle);
+    }
+
+    rot_axis.vec.x = 1; rot_axis.vec.y = 0;
+    trans_from_origin.x = 0; trans_from_origin.z = 3.0f;
+    for (uint i = 0; i < segments; i++)
+    {
+      push_matrix();
+        translate_matrix(trans_from_origin);
+        vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
+        scale_matrix(scale);
+        draw_gl_cube(colours[i % 2 + 5]);
+      pop_matrix();
+      rotate_matrix(rot_axis, rot_angle);
+    }
+  pop_matrix();
 }
 
 void draw_bouncing_cube_scene()
 {
+  float colours[] =
+  {
+    0,   0,   0,  // Black
+    0,   0,   1,  // Blue
+    0,   1,   0,  // Green
+    0,   1,   1,  // Cyan
+    1,   0,   0,  // Red
+    1,   0,   1,  // Magenta
+    1,   1,   0,  // Yellow
+    1,   1,   1   // White
+  };
   // Dynamic values for a cool animation
   static float scale_fact = 0.5f;
   static float scale_delta = -0.0025f;
@@ -733,7 +771,7 @@ void draw_bouncing_cube_scene()
       .pnt = { .x = 0, .y = 0, .z = 0 }
     };
     rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube();
+    draw_gl_cube(colours);
 
     // Stacking another matrix (copies the previous transformations)
     push_matrix();
@@ -741,7 +779,7 @@ void draw_bouncing_cube_scene()
       translation.x = 0; translation.y = 2; translation.z = 0;
       translate_matrix(translation);
       rotate_matrix(rot_axis, rot_fact);
-      draw_gl_cube();
+      draw_gl_cube(colours);
     // Popping the matrix removes the top matrix from the stack
     pop_matrix();
     // The last few transformations on the MODEL matrix have been "undone"
@@ -755,7 +793,7 @@ void draw_bouncing_cube_scene()
       translation.x = 0; translation.y = 2; translation.z = 0;
       translate_matrix(translation);
       rotate_matrix(rot_axis, rot_fact);
-      draw_gl_cube();
+      draw_gl_cube(colours);
     pop_matrix();
 
   pop_matrix();
@@ -858,6 +896,7 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     /*int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;*/
     bool right_click   = is_just_pressed(input->mouse_left_click);
+    bool left_click   = is_just_pressed(input->mouse_right_click);
     float rps = M_PI / 2;
     float angle = rps * get_delta_time();
     if (right)
@@ -899,6 +938,18 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     if (right_click)
     {
       show_cpu_calculated_matrix = true;
+    }
+    if (left_click)
+    {
+      build_matrices();
+      set_mat(PROJECTION);
+      float ar = (float)x11_window_width / (float)x11_window_height;
+      perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
+      set_mat(VIEW);
+      vec3f eye = { .x = 0, .y = 0, .z = -1 };
+      vec3f poi = { .x = 0, .y = 0, .z = 0 };
+      look_at(eye, poi, up_vector);
+      log_debug("Reset in frame  %d", framecount);
     }
 
     if (false) // TODO: Placeholder to please the compiler

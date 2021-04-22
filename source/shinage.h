@@ -174,14 +174,14 @@ static inline float get_delta_time()
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
 void draw_gl_triangle(void);
 void draw_gl_pyramid(void);
-void draw_gl_cube(void);
+void draw_gl_cube(float *colours);
 int link_gl_functions(void);
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
 unsigned int build_shader(char *source, int type);
 void test_entity_logic(player_input_t *input, entity_t *e);
 void test_cube_logic(player_input_t *input, entity_t *e);
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);
-void draw_bouncing_cube_scene();
-void draw_static_cubes_scene();
+void draw_bouncing_cube_scene(void);
+void draw_static_cubes_scene(uint segments);
 
 #endif
