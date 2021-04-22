@@ -506,16 +506,6 @@ int main(int argc, char *argv[])
       glXSwapBuffers(x11_display, x11_window);
 
       ++framecount;
-
-
-      /* Some tests */
-      static bool tested = false;
-      if (!tested)
-      {
-        //test_determinants_calculation();
-        test_inverse_calculation();
-        tested = true;
-      }
   }
 
   /* Cleanup */  
@@ -648,7 +638,7 @@ void draw_gl_cube(float *colours)
 
 void draw_static_cubes_scene(uint segments)
 {
-  float colours[8][24] =
+  float colours[9][24] =
   {
     {0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0},  // Black
     {0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1},  // Blue
@@ -657,7 +647,8 @@ void draw_static_cubes_scene(uint segments)
     {1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0},  // Red
     {1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1},  // Magenta
     {1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0},  // Yellow
-    {1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1}   // White
+    {1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1},  // White
+    {0,0,0, 0,0,1, 0,1,0, 0,1,1, 1,0,0, 1,0,1, 1,1,0, 1,1,1}   // Rainbow
   };
 
   set_mat(MODEL);
@@ -665,6 +656,11 @@ void draw_static_cubes_scene(uint segments)
     // The center of the scen will be (0 , 0, -1)
     vec3f trans_the_origin = { .x = 0, .y = 0, .z = -1 };
     translate_matrix(trans_the_origin);
+    vec3f scale = { .x = 0.05f, .y = 0.05f, .z = 0.05f };
+    scale_matrix(scale);
+    draw_gl_cube(colours[8]); // The center
+    scale.x = 20; scale.y = 20; scale.z = 20;
+    scale_matrix(scale);
 
     axis3f_t rot_axis =
     { 
