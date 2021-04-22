@@ -19,14 +19,15 @@
 
 int mat4_eq(mat4x4f m1, mat4x4f m2)
 {
+    int res = 1;
     for (int i = 0; i < 16; ++i)
         if (fabs(m1.v[i] - m2.v[i]) > epsilon)
         {
             log_detail("At position %d -> %f should be equal to %f", i, m1.v[i], m2.v[i]);
-            return 0;
+            res =  0;
         }
     
-    return 1;
+    return res;
 }
 
 int vec4_eq(vec4f v1, vec4f v2)
@@ -294,8 +295,8 @@ int main()
     mat4x4f m1_t12 = {
         .a1 = 1,
         .b2 = 1,
-        .c3 = 1,
-        .c4 = -1, .d4 = 1
+        .c3 = 1, .d3 = -1,
+        .d4 = 1
     };
 
     build_matrices();
@@ -307,8 +308,9 @@ int main()
     look_at(camera_pos, target, up);
 
     mat4x4f m2_t12 = peek(mats.view);
+    log_debug_matx4f(&m2_t12, "VIEW MAT");
 
-    if (mat4_eq(m1_t12, m2_t12))
+    if (mat4_eq(m2_t12, m1_t12))
     {
         ++ok_count;
         log_ok("View matrix");
