@@ -35,7 +35,7 @@ void build_matrices()
 */
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
-    if (!active_mat)
+    /*if (!active_mat)
         return;
 
     pop(active_mat);
@@ -61,6 +61,22 @@ void look_at(vec3f e, vec3f poi, vec3f up)
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,  .d4 = 1.0f
     };
     mat4x4f mat = mat4x4f_prod(mr, mt);
+    push(active_mat, mat);*/
+
+    if (!active_mat)
+        return;
+
+    pop(active_mat);
+
+    vec3f f = normalize3f(diff3f(poi, e));
+    vec3f u = normalize3f(up);
+    vec3f s = normalize3f(cross_product3f(f, u));
+    mat4x4f mat = {
+        .a1 = s.x,  .b1 = s.y,  .c1 = s.z,  .d1 = -dot_product3f(s, e),
+        .a2 = u.x,  .b2 = u.y,  .c2 = u.z,  .d2 = -dot_product3f(u, e),
+        .a3 = f.x,  .b3 = f.y,  .c3 = f.z,  .d3 = dot_product3f(f, e),
+        .a4 = 0.0f, .b4 = 0.0f, .c4 = 0.0f, .d4 = 1.0f
+    };
     push(active_mat, mat);
 }
 
