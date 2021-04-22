@@ -214,6 +214,62 @@ int main()
         log_fail("Angle between vectors");
     }
 
+    /* Matrix with diagonal [ 1, 2 , 3, 4] */
+    mat4x4f m1_t10 = { .a1 = 1, .b2 = 2, .c3 = 3, .d4 = 4 };
+    /* Determinant should be 24 */
+    if (fabs(determinant_mat4x4f(&m1_t10, 0) - 24.0f) < epsilon)
+    {
+        ++ok_count;
+        log_ok("Matrix determinant");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("Matrix determinant");
+    }
+
+    /* Expected result of inverse matrix */
+    mat4x4f m1_t11 = { .a1 = 1, .b2 = 0.5f, .c3 = (1.0f/3.0f), .d4 = 0.25f };
+
+    if (mat4_eq(inverse_mat4x4f(m1_t10, 0), m1_t11))
+    {
+        ++ok_count;
+        log_ok("Matrix inverse 1/2");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("Matrix inverse 1/2");
+    }
+
+    mat4x4f m2_t11 = {
+        .a1 = -1, .b1 = 0, .c1 = 0,  .d1 = 0,
+        .a2 = 0,  .b2 = 1, .c2 = 0,  .d2 = 0,
+        .a3 = 0,  .b3 = 0, .c3 = -1, .d3 = -1,
+        .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
+    };
+
+    /* Expected result */
+    mat4x4f m3_t11 = {
+        .a1 = -1, .b1 = 0, .c1 = 0,  .d1 = 0,
+        .a2 = 0,  .b2 = 1, .c2 = 0,  .d2 = 0,
+        .a3 = 0,  .b3 = 0, .c3 = -1, .d3 = -1,
+        .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
+    };
+    
+    if (mat4_eq(inverse_mat4x4f(m2_t11, 0), m3_t11))
+    {
+        ++ok_count;
+        log_ok("Matrix inverse 2/2");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("Matrix inverse 2/2");
+    }
+    
+    
+
     log_summary("%d successful tests, %d failed tests", ok_count, fail_count);
     
     return fail_count;
