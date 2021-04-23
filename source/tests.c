@@ -21,11 +21,13 @@ int mat4_eq(mat4x4f m1, mat4x4f m2)
 {
     int res = 1;
     for (int i = 0; i < 16; ++i)
-        if (fabs(m1.v[i] - m2.v[i]) > epsilon)
+    {
+        if (isnan(m1.v[i]) || (fabs(m1.v[i] - m2.v[i]) > epsilon))
         {
             log_detail("At position %d -> %f should be equal to %f", i, m1.v[i], m2.v[i]);
             res =  0;
         }
+    }
     
     return res;
 }
@@ -235,12 +237,12 @@ int main()
     if (mat4_eq(inverse_mat4x4f(m1_t10, 0, 1), m1_t11))
     {
         ++ok_count;
-        log_ok("Matrix inverse Gauss 1/2");
+        log_ok("Matrix inverse Gauss 1/3");
     }
     else
     {
         ++fail_count;
-        log_fail("Matrix inverse Gauss 1/2");
+        log_fail("Matrix inverse Gauss 1/3");
     }
 
     mat4x4f m2_t11 = {
@@ -261,12 +263,38 @@ int main()
     if (mat4_eq(inverse_mat4x4f(m2_t11, 0, 1), m3_t11))
     {
         ++ok_count;
-        log_ok("Matrix inverse Gauss 2/2");
+        log_ok("Matrix inverse Gauss 2/3");
     }
     else
     {
         ++fail_count;
-        log_fail("Matrix inverse Gauss 2/2");
+        log_fail("Matrix inverse Gauss 2/3");
+    }
+
+    mat4x4f m4_t11 = {
+        .a1 = -1,
+        .b2 = 0.707f, .c2 =  0.707f,
+        .b3 = 0.707f, .c3 = -0.707f, .d3 = -4.243f,
+        .d4 = 1
+    };
+
+    /* Expected result */
+    mat4x4f m5_t11 = {
+        .a1 = -1,
+        .b2 = (500.0f/707.0f), .c2 =  (500.0f/707.0f), .d2 =  (4243.0f/1414.0f),
+        .b3 = (500.0f/707.0f), .c3 = -(500.0f/707.0f), .d3 = -(4243.0f/1414.0f),
+        .d4 = 1
+    };
+
+    if (mat4_eq(inverse_mat4x4f(m4_t11, 0, 1), m5_t11))
+    {
+        ++ok_count;
+        log_ok("Matrix inverse Gauss 3/3");
+    }
+    else
+    {
+        ++fail_count;
+        log_fail("Matrix inverse Gauss 3/3");
     }
 
     if (mat4_eq(inverse_mat4x4f(m1_t10, 0, 0), m1_t11))
@@ -302,13 +330,13 @@ int main()
     build_matrices();
     set_mat(VIEW);
 
+
     vec3f camera_pos = { .x = 0, .y = 0, .z = 1 };
     vec3f target = { .x = 0, .y = 0, .z = 0 };
     vec3f up = { .x = 0, .y = 1, .z = 0 };
     look_at(camera_pos, target, up);
 
     mat4x4f m2_t12 = peek(mats.view);
-    log_debug_matx4f(&m2_t12, "VIEW MAT");
 
     if (mat4_eq(m2_t12, m1_t12))
     {
