@@ -487,7 +487,7 @@ static inline mat4x4f transpose_mat4x4f(mat4x4f m)
 static inline mat4x4f inverse_mat4x4f(mat4x4f m, bool det_check, bool gauss)
 {
   float det;
-  if (det_check)
+  if (det_check || !gauss)
   {
     det = determinant_mat4x4f(m, 0);
     log_debug("Det value = %f", det);
