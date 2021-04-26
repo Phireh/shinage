@@ -28,7 +28,7 @@ int mat4_eq(mat4x4f m1, mat4x4f m2)
             res =  0;
         }
     }
-    
+
     return res;
 }
 
@@ -41,7 +41,7 @@ int vec4_eq(vec4f v1, vec4f v2)
             log_detail("At position %d -> %f should be equal to %f", i, v1.v[i], v2.v[i]);
             res = 0;
         }
-    
+
     return res;
 }
 
@@ -54,7 +54,7 @@ int vec3_eq(vec3f v1, vec3f v2)
             log_detail("At position %d -> %f should be equal to %f", i, v1.v[i], v2.v[i]);
             res = 0;
         }
-    
+
     return res;
 }
 
@@ -67,11 +67,11 @@ int main()
     mat4x4f m1_t1, m2_t1;
     for (int i = 0; i < 16; ++i)
     {
-      m1_t1.v[i] =    i+1;
-      m2_t1.v[i] = -(i+1);
+        m1_t1.v[i] =    i+1;
+        m2_t1.v[i] = -(i+1);
     }
     /* m1 : [1, 2, 3 ...]; m2 : [ -1, -2, -3, ... ] */
-      
+
 
 
 
@@ -87,13 +87,13 @@ int main()
 
     if (mat4_eq(m3_t1, m4_t1))
     {
-      ++ok_count;
-      log_ok("Matrix multiplication");
+        ++ok_count;
+        log_ok("Matrix multiplication");
     }
     else
     {
-      ++fail_count;
-      log_fail("Matrix multiplication");
+        ++fail_count;
+        log_fail("Matrix multiplication");
     }
 
     /* Expected result of addition is the zero_matrix */
@@ -123,7 +123,7 @@ int main()
         ++fail_count;
         log_fail("Matrix subtraction");
     }
-    
+
     /* Expected result of scalar multiplication is the same as previous test */
     mat4x4f m1_t4 = m1_t3;
     if (mat4_eq(m1_t4, scalar_mat4x4f_prod(2, m1_t1)))
@@ -158,7 +158,7 @@ int main()
 
     /* Expected value of rotating vector 90º around Y axis */
     vec3f v2_t6 = { .x = 0, .y = 1, .z = -1};
-    
+
     if (vec3_eq(y_axis_rot(v1_t6, 90.0f), v2_t6))
     {
         ++ok_count;
@@ -259,7 +259,7 @@ int main()
         .a3 = 0,  .b3 = 0, .c3 = -1, .d3 = -1,
         .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
     };
-    
+
     if (mat4_eq(inverse_mat4x4f(m2_t11, 0, 1), m3_t11))
     {
         ++ok_count;
@@ -364,6 +364,6 @@ int main()
     }
 
     log_summary("%d successful tests, %d failed tests", ok_count, fail_count);
-    
+
     return fail_count;
 }
