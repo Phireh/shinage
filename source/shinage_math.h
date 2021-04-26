@@ -517,9 +517,9 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m, bool det_check, bool gauss)
             for (i = 0; i < 4; i++)
                 for (j = 0; j < 4; j++)
                     aux[i][j] = m.rows[i].v[j];
-            /* Interchange the row of matrix,
-               interchanging of row will start from the last row */
-            for (i = 3; i > 0; i--)
+            /* Ordering the rows of matrix,
+               The interchanges will start from the last row */
+            for (i = 3; i > 1; i--)
                 {
                     if (aux[i - 1][0] < aux[i][0]) {
                         float* temp = aux[i];
