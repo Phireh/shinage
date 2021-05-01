@@ -258,7 +258,7 @@ static inline vec3f get_position()
         return zero_vec3f;
 
     mat4x4f mat = peek(active_mat);
-    mat4x4f inv_mat = inverse_mat4x4f(mat, true, true);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, false, false);
     vec3f pos = { .x = inv_mat.d1, .y = inv_mat.d2, .z = inv_mat.d3 };
     return pos;
 }

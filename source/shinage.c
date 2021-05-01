@@ -297,6 +297,13 @@ int main(int argc, char *argv[])
                                     &player1_last_input->down,
                                     PRESSED,
                                     input_phase_stamp);
+                    break;
+                case XK_space:
+                    set_input_state(&player1_input->space,
+                                    &player1_last_input->space,
+                                    PRESSED,
+                                    input_phase_stamp);
+                    break;
                 }
                 break;
 
@@ -356,6 +363,12 @@ int main(int argc, char *argv[])
                 case XK_f:
                     set_input_state(&player1_input->down,
                                     &player1_last_input->down,
+                                    UNPRESSED,
+                                    input_phase_stamp);
+                    break;
+                case XK_space:
+                    set_input_state(&player1_input->space,
+                                    &player1_last_input->space,
                                     UNPRESSED,
                                     input_phase_stamp);
                     break;
@@ -549,7 +562,6 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
 }
 
 bool show_cpu_calculated_matrix;
-bool show_camera_position;
 
 void draw_gl_cube(float *colours)
 {
@@ -635,13 +647,6 @@ void draw_gl_cube(float *colours)
         log_debug_cpu_computed_vertex_positions(vertices, 8, 3);
         show_cpu_calculated_matrix = false;
     }
-    if (show_camera_position)
-    {
-        vec3f camera_position = get_position();
-        log_debug("Camera position %f %f %f", camera_position.x, camera_position.y, camera_position.z);
-        show_camera_position = false;
-    }
-
 }
 
 void draw_static_cubes_scene(uint segments)
@@ -901,6 +906,7 @@ void test_cube_logic(player_input_t *input, entity_t *e)
       int  mouse_y = input->cursor_y_delta;*/
     bool right_click   = is_just_pressed(input->mouse_left_click);
     bool left_click   = is_just_pressed(input->mouse_right_click);
+    bool space = is_just_pressed(input->space);
     float rps = M_PI / 2;
     float angle = rps * get_delta_time();
     if (right)
@@ -942,14 +948,14 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     if (right_click)
     {
         show_cpu_calculated_matrix = true;
-        show_camera_position = true;        
+        /* Show the camera position */
     }
     if (left_click)
     {
         build_matrices();
         set_mat(PROJECTION);
         float ar = (float)x11_window_width / (float)x11_window_height;
-        perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
+        perspective_camera(M_PI / 4, ar, 0.1f, 100.0f);
         set_mat(VIEW);
         vec3f eye = { .x = 0, .y = 0, .z = -1 };
         vec3f poi = { .x = 0, .y = 0, .z = 0 };
@@ -957,6 +963,13 @@ void test_cube_logic(player_input_t *input, entity_t *e)
         log_debug("Reset in frame  %d", framecount);
     }
 
+    if (space)
+    {
+        set_mat(VIEW);
+        vec3f camera_position = get_position();
+        log_debug("Camera position %f %f %f", camera_position.x, camera_position.y, camera_position.z);
+    }
+    
     if (false) // TODO: Placeholder to please the compiler
         log_debug("Ye [%f]", e->position.x);
 }
