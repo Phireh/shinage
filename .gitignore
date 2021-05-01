@@ -1,3 +1,7 @@
 # Output binaries
 shinage
 tests
+
+# tag files
+tags
+TAGS
