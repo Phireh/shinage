@@ -549,6 +549,8 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
 }
 
 bool show_cpu_calculated_matrix;
+bool show_camera_position;
+
 void draw_gl_cube(float *colours)
 {
     float vertices[] = {
@@ -632,6 +634,12 @@ void draw_gl_cube(float *colours)
     {
         log_debug_cpu_computed_vertex_positions(vertices, 8, 3);
         show_cpu_calculated_matrix = false;
+    }
+    if (show_camera_position)
+    {
+        vec3f camera_position = get_position();
+        log_debug("Camera position %f %f %f", camera_position.x, camera_position.y, camera_position.z);
+        show_camera_position = false;
     }
 
 }
@@ -934,6 +942,7 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     if (right_click)
     {
         show_cpu_calculated_matrix = true;
+        show_camera_position = true;        
     }
     if (left_click)
     {
