@@ -1,0 +1,7 @@
+root = true
+
+# Source files and shaders
+[*.{c,h,fs,vs}]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
