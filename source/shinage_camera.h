@@ -314,6 +314,13 @@ void add_pitch(float angle)
         .a3 = 0.0f,        .b3 = sin(angle),  .c3 = cos(angle),  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,        .c4 = 0.0f,        .d4 =  1.0f
     };
+    /* NOTE: The multiplication order is important. The transformations to the world happen
+       in left-to-right order as we multiply matrices. We want to apply this rotation *first*,
+       before we translate the camera.
+
+       The left-to-right order is because we use row-first matrices. In OpenGL we'd
+       have to reverse the order of multiplication.
+    */
     mat = mat4x4f_prod(rotation_matrix_around_x, mat);
     push(active_mat, mat);
 }
@@ -330,6 +337,13 @@ void add_yaw(float angle)
         .a3 = -sin(angle),  .b3 = 0.0f,   .c3 = cos(angle),   .d3 =  0.0f,
         .a4 = 0.0f,         .b4 = 0.0f,   .c4 = 0.0f,         .d4 =  1.0f
     };
+    /* NOTE: The multiplication order is important. The transformations to the world happen
+       in left-to-right order as we multiply matrices. We want to apply this rotation *first*,
+       before we translate the camera.
+
+       The left-to-right order is because we use row-first matrices. In OpenGL we'd
+       have to reverse the order of multiplication.
+    */
     mat = mat4x4f_prod(rotation_matrix_around_y, mat);
     push(active_mat, mat);
 }
@@ -346,9 +360,17 @@ void add_roll(float angle)
         .a3 = 0.0f,        .b3 = 0.0f,         .c3 = 1.0f,  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,         .c4 = 0.0f,  .d4 =  1.0f
     };
+    /* NOTE: The multiplication order is important. The transformations to the world happen
+       in left-to-right order as we multiply matrices. We want to apply this rotation *first*,
+       before we translate the camera.
+
+       The left-to-right order is because we use row-first matrices. In OpenGL we'd
+       have to reverse the order of multiplication.
+    */
     mat = mat4x4f_prod(rotation_matrix_around_z, mat);
     push(active_mat, mat);
 }
+
 
 
 #endif
