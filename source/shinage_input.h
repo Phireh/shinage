@@ -70,10 +70,12 @@ typedef struct {
             key_input_t  mouse_left_click; // 7
             key_input_t mouse_right_click; // 8
             key_input_t             space; // 9
+            key_input_t     shoulder_left; // 10
+            key_input_t    shoulder_right; // 11
         };
         /* HACK: This has to be the same size as the struct above. See
            consume_first_presses below. */
-        key_input_t key_records[9];
+        key_input_t key_records[11];
     };
     /* NOTE: What are these coords relative to? Whatever it is, it should be
        consistent between platforms */

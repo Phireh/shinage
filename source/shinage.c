@@ -304,6 +304,20 @@ int main(int argc, char *argv[])
                                     PRESSED,
                                     input_phase_stamp);
                     break;
+                case XK_Q:
+                case XK_q:
+                    set_input_state(&player1_input->shoulder_left,
+                                    &player1_last_input->shoulder_left,
+                                    PRESSED,
+                                    input_phase_stamp);
+                    break;
+                case XK_E:
+                case XK_e:
+                    set_input_state(&player1_input->shoulder_right,
+                                    &player1_last_input->shoulder_right,
+                                    PRESSED,
+                                    input_phase_stamp);
+                    break;
                 }
                 break;
 
@@ -369,6 +383,20 @@ int main(int argc, char *argv[])
                 case XK_space:
                     set_input_state(&player1_input->space,
                                     &player1_last_input->space,
+                                    UNPRESSED,
+                                    input_phase_stamp);
+                    break;
+                case XK_Q:
+                case XK_q:
+                    set_input_state(&player1_input->shoulder_left,
+                                    &player1_last_input->shoulder_left,
+                                    UNPRESSED,
+                                    input_phase_stamp);
+                    break;
+                case XK_E:
+                case XK_e:
+                    set_input_state(&player1_input->shoulder_right,
+                                    &player1_last_input->shoulder_right,
                                     UNPRESSED,
                                     input_phase_stamp);
                     break;
@@ -902,48 +930,39 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     bool back    = is_pressed(input->back);
     bool up      = is_pressed(input->up);
     bool down    = is_pressed(input->down);
-    /*int  mouse_x = input->cursor_x_delta;
-      int  mouse_y = input->cursor_y_delta;*/
+    bool shoulder_left = is_pressed(input->shoulder_left);
+    bool shoulder_right = is_pressed(input->shoulder_right);
+    int  mouse_x = input->cursor_x_delta;
+    int  mouse_y = input->cursor_y_delta;
     bool right_click   = is_just_pressed(input->mouse_left_click);
     bool left_click   = is_just_pressed(input->mouse_right_click);
     bool space = is_just_pressed(input->space);
     float rps = M_PI / 2;
     float angle = rps * get_delta_time();
-    if (right)
+    float mouse_sensitivity = 1/(rps*40.0f);
+    float move_sensitivity = 1/20.0f;
+    if (mouse_x)
     {
         set_mat(VIEW);
-        add_roll(angle);
+        add_yaw(mouse_sensitivity * mouse_x);
         //log_debug("Added roll of %f", angle);
     }
-    if (left)
+    if (mouse_y)
     {
         set_mat(VIEW);
-        add_roll(-angle);
+        add_pitch(mouse_sensitivity * mouse_y);
         //log_debug("Added roll of %f", -angle);
     }
-    if (forward)
+    if (forward || back || up || down || right || left)
     {
         set_mat(VIEW);
-        add_pitch(angle);
+        move_camera((right - left)*move_sensitivity,(up - down)*move_sensitivity,(forward - back)*move_sensitivity);
         //log_debug("Added pitch of %f", angle);
     }
-    if (back)
+    if (shoulder_left || shoulder_right)
     {
         set_mat(VIEW);
-        add_pitch(-angle);
-        //log_debug("Added pitch of %f", -angle);
-    }
-    if (up)
-    {
-        set_mat(VIEW);
-        add_yaw(angle);
-        //log_debug("Added yae of %f", angle);
-    }
-    if (down)
-    {
-        set_mat(VIEW);
-        add_yaw(-angle);
-        //log_debug("Added yaw of %f", -angle);
+        add_roll((shoulder_right - shoulder_left) * angle);
     }
     if (right_click)
     {
@@ -969,7 +988,7 @@ void test_cube_logic(player_input_t *input, entity_t *e)
         vec3f camera_position = get_position();
         log_debug("Camera position %f %f %f", camera_position.x, camera_position.y, camera_position.z);
     }
-    
+
     if (false) // TODO: Placeholder to please the compiler
         log_debug("Ye [%f]", e->position.x);
 }

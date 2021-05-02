@@ -372,5 +372,35 @@ void add_roll(float angle)
 }
 
 
+/* NOTE: In our representation the camera lookAt vector has opposite sign
+   to what we see. This means that, for camera transforms, the Z coordinate
+   should be multiplied by -1.
+
+   This function is meant to be more general, so the callee is responsible
+   for remembering that. A convenience function is provided below.
+ */
+void add_translation(float x, float y, float z)
+{
+    if (!active_mat)
+        return;
+
+    mat4x4f mat = pop(active_mat);
+    mat4x4f translation_mat = {
+        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = -x,
+        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = -y,
+        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = -z,
+        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
+    };
+
+    mat = mat4x4f_prod(translation_mat, mat);
+    push(active_mat, mat);
+}
+
+/* Convenience function that takes into account the View matrix Z coord
+   orientation, see notes on add_translation */
+void move_camera(float x, float y, float z)
+{
+    add_translation(x, y, -z);
+}
 
 #endif
