@@ -214,7 +214,28 @@ int main(int argc, char *argv[])
         consume_first_presses(player1_input);
 
         /* Event handling */
-        // TODO: Sleep so we don't burn the CPU
+
+        // TODO: Logic for calculating sleep time / reanudating sleep
+        const struct timespec req = {
+            .tv_sec = 0,
+            .tv_nsec = 5 * 1000 * 1000 // 5 ms
+        };
+        int nsleep_ret = nanosleep(&req, NULL);
+        if (nsleep_ret)
+        {
+            switch (errno)
+            {
+            case EFAULT:
+                log_debug("Error copying information from used space during nanosleep");
+                break;
+            case EINTR:
+                log_debug("Nanosleep interrupted by a signal");
+                break;
+            case EINVAL:
+                log_debug("Value of tv_nsec is invalid");
+                break;
+            }
+        }
 
 
         while(XPending(x11_display))
@@ -318,6 +339,13 @@ int main(int argc, char *argv[])
                                     PRESSED,
                                     input_phase_stamp);
                     break;
+
+                case XK_F1:
+                    set_input_state(&player1_input->f1,
+                                    &player1_last_input->f1,
+                                    PRESSED,
+                                    input_phase_stamp);
+                    break;
                 }
                 break;
 
@@ -400,6 +428,14 @@ int main(int argc, char *argv[])
                                     UNPRESSED,
                                     input_phase_stamp);
                     break;
+
+                case XK_F1:
+                    set_input_state(&player1_input->f1,
+                                    &player1_last_input->f1,
+                                    UNPRESSED,
+                                    input_phase_stamp);
+                    break;
+
                 }
                 break;
 
@@ -472,15 +508,29 @@ int main(int argc, char *argv[])
 
             case MotionNotify:
                 {
+                    // TODO: Mouse input for other players
                     int x = ((XPointerMovedEvent*)&x11_event)->x;
                     int y = ((XPointerMovedEvent*)&x11_event)->y;
-                    /* Save old cursor coords */
-                    player1_last_input->cursor_x = player1_input->cursor_x;
-                    player1_last_input->cursor_y = player1_input->cursor_y;
 
-                    /* Store the new ones */
-                    player1_input->cursor_x = x;
-                    player1_input->cursor_y = y;
+                    if (player1_input->pointer_state == NORMAL)
+                    {
+                        /* Save old cursor coords */
+                        player1_last_input->cursor_x = player1_input->cursor_x;
+                        player1_last_input->cursor_y = player1_input->cursor_y;
+
+                        /* Store the new ones */
+                        player1_input->cursor_x = x;
+                        player1_input->cursor_y = y;
+                    }
+                    else if (player1_input->pointer_state == GRABBED)
+                    {
+                        /* The old coords will always be the center of the screen, since we're grabbed.
+                           This frame's cursor coords will be changed to it too, after we're done with handling input.
+                           Our only job here is to store the temp value before we move the cursor back.
+                        */
+                        player1_input->cursor_x = x;
+                        player1_input->cursor_y = y;
+                    }
 
                     //log_debug("Moved pointer to (%d,%d)", x, y);
                 } break;
@@ -506,16 +556,39 @@ int main(int argc, char *argv[])
             }
         }
 
+        /* Auxiliar struct members for comfier input handling */
+
+        if (player1_input->pointer_state == NORMAL)
+        {
+            player1_input->cursor_x_delta = (int)player1_input->cursor_x - (int)player1_last_input->cursor_x;
+            player1_input->cursor_y_delta = (int)player1_input->cursor_y - (int)player1_last_input->cursor_y;
+        }
+        else if (player1_input->pointer_state == GRABBED)
+        {
+            player1_input->cursor_x_delta = (int)player1_input->cursor_x - (int)x11_window_width/2;
+            player1_input->cursor_y_delta = (int)player1_input->cursor_y - (int)x11_window_height/2;
+
+            /* NOTE: Since we're grabbed, we return the cursor to the center of the window immediately after
+               we calculated the cursor delta */
+            player1_input->cursor_x = (int)x11_window_width/2;
+            player1_input->cursor_y = (int)x11_window_height/2;
+
+            /* NOTE: XWarpPointer creates a X11 event when we move the cursor, we need to discard it just after doing this move */
+            if (XWarpPointer(x11_display, None, x11_window, 0, 0, 0, 0, (int)(x11_window_width/2), (int)(x11_window_height/2)) == BadWindow)
+            {
+                log_debug("Error trying to move pointer to center of window: BadWindow");
+            }
+
+            /* Flush the event queue */
+            XSync(x11_display, True);
+
+        }
 
 
         /* Copy mod_key information to player input struct */
         player1_input->alt = alt_key_is_set();
         player1_input->ctrl = ctrl_key_is_set();
         player1_input->shift = shift_key_is_set();
-
-        /* Auxiliar struct members for comfier input handling */
-        player1_input->cursor_x_delta = (int)player1_input->cursor_x - (int)player1_last_input->cursor_x;
-        player1_input->cursor_y_delta = (int)player1_input->cursor_y - (int)player1_last_input->cursor_y;
 
         /* Logic */
         test_cube_logic(player1_input, &test_pyramid);
@@ -595,7 +668,7 @@ void draw_gl_pyramid(float *colours)
        0.0f,   0.43f,   0.0f,
       -0.5f,  -0.43f,  -0.5f,
        0.5f,  -0.43f,  -0.5f,
-       0.0f,  -0.43f,   0.5f 
+       0.0f,  -0.43f,   0.5f
     };
 
     uint num_indices = 12;
@@ -603,7 +676,7 @@ void draw_gl_pyramid(float *colours)
       {
         3,1,2, 0,1,2, 0,3,1, 0,2,3
       };
-    
+
     static unsigned int pyramid_program = 0;
     if (!pyramid_program)
         pyramid_program = make_gl_program(simple_color_vertex_shader, simple_color_fragment_shader);
@@ -1005,6 +1078,7 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     bool down    = is_pressed(input->down);
     bool shoulder_left = is_pressed(input->shoulder_left);
     bool shoulder_right = is_pressed(input->shoulder_right);
+    bool f1 = is_just_pressed(input->f1);
     int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;
     bool right_click   = is_just_pressed(input->mouse_left_click);
@@ -1062,6 +1136,12 @@ void test_cube_logic(player_input_t *input, entity_t *e)
         log_debug("Camera position %f %f %f", camera_position.x, camera_position.y, camera_position.z);
     }
 
+    if (f1)
+    {
+        // TODO: Pointer grabbing
+        set_pointer_state(input, (input->pointer_state == NORMAL ? GRABBED : NORMAL));
+    }
+
     if (false) // TODO: Placeholder to please the compiler
         log_debug("Ye [%f]", e->position.x);
 }
@@ -1092,4 +1172,69 @@ int link_gl_functions(void)
     glGetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)     glXGetProcAddress((const GLubyte *)"glGetUniformLocation");
     glUniformMatrix4fv        = (PFNGLUNIFORMMATRIX4FVPROC)       glXGetProcAddress((const GLubyte *)"glUniformMatrix4fv");
     return 1;
+}
+
+/* Sets the pointer state, which at the moment could be either NORMAL or GRABBED.
+   Returns 1 on success, 0 on failure */
+int set_pointer_state(player_input_t *input, pointer_state_t new_state)
+{
+    if (input->pointer_state == new_state)
+        return 1;
+
+    /* Grab the pointer */
+    if (new_state == GRABBED && input->pointer_state == NORMAL)
+    {
+        int ret = XGrabPointer(x11_display,
+                               x11_window,
+                               true,
+                               0, // TODO: Figure out what this value does
+                               GrabModeAsync,
+                               GrabModeAsync,
+                               x11_window,
+                               None,
+                               CurrentTime);
+        if (ret == BadCursor)
+        {
+            log_debug("Error trying to grab mouse: BadCursor");
+            return 0;
+        }
+        else if (ret == BadValue)
+        {
+            log_debug("Error trying to grab mouse: BadValue");
+            return 0;
+        }
+        else if (ret == BadWindow)
+        {
+            log_debug("Error trying to grab mouse: BadWindow");
+            return 0;
+        }
+        else
+        {
+            XFixesHideCursor(x11_display, x11_window);
+            input->pointer_state = new_state;
+
+            /* Don't move the in-game pointer from the center of the screen */
+            input->cursor_x = (int)(x11_window_width/2);
+            input->cursor_y = (int)(x11_window_height/2);
+
+            if (XWarpPointer(x11_display, None, x11_window, 0, 0, 0, 0, x11_window_width/2, x11_window_height/2) == BadWindow)
+            {
+                log_debug("Error trying to move pointer to center of window: BadWindow");
+            }
+
+            /* Flush the event queue */
+            XSync(x11_display, True);
+            return 1;
+        }
+    }
+    /* Ungrab the pointer */
+    if (new_state == NORMAL && input->pointer_state == GRABBED)
+    {
+        XUngrabPointer(x11_display, CurrentTime);
+        XFixesShowCursor(x11_display, x11_window);
+        input->pointer_state = new_state;
+        return 1;
+    }
+
+    return 0;
 }

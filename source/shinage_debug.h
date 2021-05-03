@@ -11,4 +11,6 @@
 
 #define log_info(str, ...) fprintf(stderr, "[INFO] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
+#define stringify(symbol) #symbol
+
 #endif

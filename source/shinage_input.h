@@ -50,6 +50,15 @@ typedef enum {
     JUST_RELEASED = 0b1000
 } key_state_t;
 
+typedef enum {
+    /* Normal state is described as 0. If we don't bother describing the pointer state
+       our program should just assume normality and try to work as usual */
+    NORMAL = 0,
+    /* Pointer grabbed. Useful for moving the camera */
+    GRABBED = 1
+
+} pointer_state_t;
+
 typedef struct {
     // The state of the key, see the enum above
     int    state;
@@ -72,15 +81,38 @@ typedef struct {
             key_input_t             space; // 9
             key_input_t     shoulder_left; // 10
             key_input_t    shoulder_right; // 11
+            key_input_t                f1; // 12
+            key_input_t                f2; // 13
+            key_input_t                f3; // 14
+            key_input_t                f4; // 15
+            key_input_t                f5; // 16
+            key_input_t                f6; // 17
+            key_input_t                f7; // 18
+            key_input_t                f8; // 19
+            key_input_t                f9; // 20
+            key_input_t               f10; // 21
+            key_input_t               f11; // 22
+            key_input_t               f12; // 23
+            key_input_t               f13; // 24
+            key_input_t               f14; // 25
+            key_input_t               f15; // 26
         };
         /* HACK: This has to be the same size as the struct above. See
            consume_first_presses below. */
-        key_input_t key_records[11];
+        key_input_t key_records[26];
     };
     /* NOTE: What are these coords relative to? Whatever it is, it should be
        consistent between platforms */
     unsigned int         cursor_x;
     unsigned int         cursor_y;
+    /* Pointer-grabbing is done per-player at the moment. Instead of using a bool
+       we're using an enum to describe all possible pointer states.
+
+       TODO: What are these pointer states? Should we detect when the pointer goes outside
+       our game window?
+    */
+    pointer_state_t pointer_state;
+
     /* These are redundant but make input passing easier so we'll keeping them as a test */
     int cursor_x_delta;
     int cursor_y_delta;

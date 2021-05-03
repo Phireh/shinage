@@ -7,12 +7,20 @@
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
+#include <errno.h>
 
 /* X11 server includes:
    requires linking with -lX11 */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
+
+/* X11 extensions:
+   requires linking with -lXfixes
+   TODO: Figure out how ubiquitous these are,
+   and if we should use them on release
+*/
+#include <X11/extensions/Xfixes.h>
 
 /* OpenGL related includes:
    requires linking with -lGL */
@@ -99,7 +107,7 @@ PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLUNIFORM3FPROC               glUniform3f;
 PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation;
 PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
-    
+
 /* OpenGL globals */
 GLXContext glx_context;
 
@@ -183,5 +191,6 @@ void test_cube_logic(player_input_t *input, entity_t *e);
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);
 void draw_bouncing_cube_scene(void);
 void draw_static_cubes_scene(uint segments);
+int set_pointer_state(player_input_t *input, pointer_state_t new_state);
 
 #endif
