@@ -103,7 +103,7 @@ PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
 /* OpenGL globals */
 GLXContext glx_context;
 
-char *cube_vertex_shader =
+char *simple_color_vertex_shader =
     "#version 150\n"      \
     "in vec3 position;\n" \
     "in vec3 vColor;\n" \
@@ -116,7 +116,7 @@ char *cube_vertex_shader =
     "fColor = vColor;\n" \
     "}";
 
-char *cube_fragment_shader =
+char *simple_color_fragment_shader =
     "#version 150\n" \
     "out vec4 out_color;\n" \
     "in vec3 fColor;\n" \
@@ -172,8 +172,8 @@ static inline float get_delta_time()
 
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
-void draw_gl_triangle(void);
-void draw_gl_pyramid(void);
+//void draw_gl_triangle(void);
+void draw_gl_pyramid(float *colours);
 void draw_gl_cube(float *colours);
 int link_gl_functions(void);
 unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);

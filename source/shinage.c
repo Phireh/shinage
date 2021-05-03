@@ -589,6 +589,81 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
     return 0;
 }
 
+void draw_gl_pyramid(float *colours)
+{
+    float vertices[] = {
+       0.0f,   0.43f,   0.0f,
+      -0.5f,  -0.43f,  -0.5f,
+       0.5f,  -0.43f,  -0.5f,
+       0.0f,  -0.43f,   0.5f 
+    };
+
+    uint num_indices = 12;
+    uint indices[] =
+      {
+        3,1,2, 0,1,2, 0,3,1, 0,2,3
+      };
+    
+    static unsigned int pyramid_program = 0;
+    if (!pyramid_program)
+        pyramid_program = make_gl_program(simple_color_vertex_shader, simple_color_fragment_shader);
+    glUseProgram(pyramid_program);
+
+    static int mmatrix_uniform_pos = -1;
+    if (mmatrix_uniform_pos == -1)
+        mmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "modelMatrix");
+
+    static int vmatrix_uniform_pos = -1;
+    if (vmatrix_uniform_pos == -1)
+        vmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "viewMatrix");
+
+    static int pmatrix_uniform_pos = -1;
+    if (pmatrix_uniform_pos == -1)
+        pmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "projMatrix");
+
+
+    mat4x4f mmatrix = peek(mats.model);
+    mat4x4f vmatrix = peek(mats.view);
+    mat4x4f pmatrix = peek(mats.projection);
+
+    glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
+    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_TRUE, vmatrix.v);
+    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
+
+    static unsigned int vao = 0;
+    if (!vao)
+        glGenVertexArrays(1, &vao);
+
+    glBindVertexArray(vao);
+
+    static unsigned int position_bo = 0;
+    if (!position_bo)
+        glGenBuffers(1, &position_bo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, position_bo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    static unsigned int colour_bo = 0;
+    if (!colour_bo)
+        glGenBuffers(1, &colour_bo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
+    glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), colours, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(1);
+
+    static unsigned int element_bo = 0;
+    if (!element_bo)
+        glGenBuffers(1, &element_bo);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
+
+    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
+}
+
 bool show_cpu_calculated_matrix;
 
 void draw_gl_cube(float *colours)
@@ -612,7 +687,7 @@ void draw_gl_cube(float *colours)
 
     static unsigned int cube_program = 0;
     if (!cube_program)
-        cube_program = make_gl_program(cube_vertex_shader, cube_fragment_shader);
+        cube_program = make_gl_program(simple_color_vertex_shader, simple_color_fragment_shader);
     glUseProgram(cube_program);
 
     static int mmatrix_uniform_pos = -1;
@@ -697,7 +772,8 @@ void draw_static_cubes_scene(uint segments)
     translate_matrix(trans_the_origin);
     vec3f scale = { .x = 0.1f, .y = 0.1f, .z = 0.1f };
     scale_matrix(scale);
-    draw_gl_cube(colours[8]); // The center
+    //draw_gl_cube(colours[8]); // The center
+    draw_gl_pyramid(colours[8]); // The center
     scale.x = 10; scale.y = 10; scale.z = 10;
     scale_matrix(scale);
 
