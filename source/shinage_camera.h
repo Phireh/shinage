@@ -35,33 +35,6 @@ void build_matrices()
  */
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
-    /*if (!active_mat)
-      return;
-
-      pop(active_mat);
-
-      // The w is the vector with the same direction of the look vector, but contrary sense
-      vec3f w = normalize3f(diff3f(e, poi));
-      // The u vector is perpendicular to the plane formed by the up and the w vectors
-      vec3f u = normalize3f(cross_product3f(w, up)); // The global up vector should be unitary, but just in case, we normallyze
-      // And the vector v is perpendicular to the plane formed by the w and u vectors
-      vec3f v = cross_product3f(u, w); // Both are already unitary vectors, no need to normallize
-      // Rotation to make the bases coincide (I guess xD)
-      mat4x4f mr = {
-      .a1 = u.x,  .b1 = u.y,  .c1 = u.z,  .d1 = 0.0f,
-      .a2 = v.x,  .b2 = v.y,  .c2 = v.z,  .d2 = 0.0f,
-      .a3 = w.x,  .b3 = w.y,  .c3 = w.z,  .d3 = 0.0f,
-      .a4 = 0.0f, .b4 = 0.0f, .c4 = 0.0f, .d4 = 1.0f
-      };
-      // Translation to make the origins coincide (I guess xD)
-      mat4x4f mt = {
-      .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,  .d1 = -e.x,
-      .a2 = 0.0f,  .b2 = 1.0f,  .c2 = 0.0f,  .d2 = -e.y,
-      .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,  .d3 = -e.z,
-      .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,  .d4 = 1.0f
-      };
-      mat4x4f mat = mat4x4f_prod(mr, mt);
-      push(active_mat, mat);*/
 
     if (!active_mat)
         return;

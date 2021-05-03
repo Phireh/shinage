@@ -149,37 +149,37 @@ static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
 void set_input_state(key_input_t *curr_input, key_input_t *last_input, int curr_state, double curr_timestamp)
 {
     if (curr_state == PRESSED)
+    {
+        /* Case 1: The key is pressed now, but it was not being pressed before */
+        if (!(last_input->state & PRESSED))
         {
-            /* Case 1: The key is pressed now, but it was not being pressed before */
-            if (!(last_input->state & PRESSED))
-                {
-                    /* NOTE: We only change timestamp here. We're only interested in the moment of the initial activation */
-                    curr_input->state = JUST_PRESSED;
-                    curr_input->stamp = curr_timestamp;
-                }
-            /* Case 2: The key is pressed now, and it was already being pressed */
-            else
-                {
-                    curr_input->state = HOLDING;
-                }
+            /* NOTE: We only change timestamp here. We're only interested in the moment of the initial activation */
+            curr_input->state = JUST_PRESSED;
+            curr_input->stamp = curr_timestamp;
         }
+        /* Case 2: The key is pressed now, and it was already being pressed */
+        else
+        {
+            curr_input->state = HOLDING;
+        }
+    }
 
 
     if (curr_state == UNPRESSED)
+    {
+        /* Case 3: the key is not being pressed, but it was being pressed before */
+        if (last_input->state & PRESSED)
         {
-            /* Case 3: the key is not being pressed, but it was being pressed before */
-            if (last_input->state & PRESSED)
-                {
-                    curr_input->state = JUST_RELEASED;
-                }
-            /* Case 4: the key is not being pressed, and it stopped being pressed
-               just the frame before. */
-
-            else if (last_input->state & JUST_RELEASED)
-                {
-                    curr_input->state = UNPRESSED;
-                }
+            curr_input->state = JUST_RELEASED;
         }
+        /* Case 4: the key is not being pressed, and it stopped being pressed
+           just the frame before. */
+
+        else if (last_input->state & JUST_RELEASED)
+        {
+            curr_input->state = UNPRESSED;
+        }
+    }
 }
 
 /* HACK: See player_input_t above. At the start of each frame
@@ -191,13 +191,13 @@ static inline void consume_first_presses(player_input_t *p)
 {
     int nrecords = sizeof(p->key_records)/sizeof(p->key_records[0]);
     for (int i = 0; i < nrecords; ++i)
-        {
-            if (p->key_records[i].state == JUST_PRESSED)
-                p->key_records[i].state = HOLDING;
+    {
+        if (p->key_records[i].state == JUST_PRESSED)
+            p->key_records[i].state = HOLDING;
 
-            if (p->key_records[i].state == JUST_RELEASED)
-                p->key_records[i].state = UNPRESSED;
-        }
+        if (p->key_records[i].state == JUST_RELEASED)
+            p->key_records[i].state = UNPRESSED;
+    }
 }
 
 /* Inline functions to query the current state of a key.
