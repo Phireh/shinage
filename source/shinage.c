@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
             dt = curr_frame_start_time - last_frame_start_time;
 
             double extra_s_last_frame = (target_s_per_frame - dt);
-            log_debug("Delta time %f s, we should sleep for %f s", dt, extra_s_last_frame);
+            //log_debug("Delta time %f s, we should sleep for %f s", dt, extra_s_last_frame);
 
             if (extra_s_last_frame > 0.0f) /* Only try to sleep if we actually need to */
             {
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    log_debug("We slept for %f s", get_current_time() - curr_frame_start_time);
+                    //log_debug("We slept for %f s", get_current_time() - curr_frame_start_time);
                 }
             }
         }
@@ -607,15 +607,10 @@ int main(int argc, char *argv[])
             player1_input->cursor_x = (int)x11_window_width/2;
             player1_input->cursor_y = (int)x11_window_height/2;
 
-            /* NOTE: XWarpPointer creates a X11 event when we move the cursor, we need to discard it just after doing this move */
             if (XWarpPointer(x11_display, None, x11_window, 0, 0, 0, 0, (int)(x11_window_width/2), (int)(x11_window_height/2)) == BadWindow)
             {
                 log_debug("Error trying to move pointer to center of window: BadWindow");
             }
-
-            /* Flush the event queue */
-            XSync(x11_display, True);
-
         }
 
 
