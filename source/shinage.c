@@ -183,12 +183,66 @@ int main(int argc, char *argv[])
     XWindowAttributes x11_window_attr;
     XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
 
+
+
+    // Disable vsync
+    if (!set_vsync(false))
+    {
+        log_debug("Error trying to set Vsync off");
+    }
+
     /* Main loop */
+    double curr_frame_start_time;
+    double last_frame_start_time;
+    double dt;
     XEvent x11_event;
     KeySym keysym = 0;
     main_loop_state_t main_loop_state = RUNNING;
     while (main_loop_state == RUNNING)
     {
+        /* We only need to sleep if VSync is off and the curr frame is not the first one */
+        if (!vsync && framecount)
+        {
+            /* TODO: Include controls for upping the framerate target so we can test time-independence of logic code */
+            last_frame_start_time = curr_frame_start_time;
+            curr_frame_start_time = get_current_time();
+            dt = curr_frame_start_time - last_frame_start_time;
+
+            double extra_s_last_frame = (target_s_per_frame - dt);
+            log_debug("Delta time %f s, we should sleep for %f s", dt, extra_s_last_frame);
+
+            if (extra_s_last_frame > 0.0f) /* Only try to sleep if we actually need to */
+            {
+                const struct timespec req = {
+                    .tv_sec = 0,
+                    // TODO: Figure out if we need extra time
+                    .tv_nsec = extra_s_last_frame * 1000 * 1000 * 1000 // we sleep for enough ns to burn our extra time
+                };
+                int nsleep_ret = nanosleep(&req, NULL);
+                if (nsleep_ret)
+                {
+                    switch (errno)
+                    {
+                    case EFAULT:
+                        log_debug("Error copying information from used space during nanosleep");
+                        break;
+                    case EINTR:
+                        log_debug("Nanosleep interrupted by a signal");
+                        break;
+                    case EINVAL:
+                        log_debug("Value of tv_nsec is invalid");
+                        break;
+                    default:
+                        log_debug("Unknown error during nanosleep");
+                        break;
+                    }
+                }
+                else
+                {
+                    log_debug("We slept for %f s", get_current_time() - curr_frame_start_time);
+                }
+            }
+        }
 
         /* NOTE: The basic input handling loop is as follows:
            We mantain 2 different structures: the last frame, and current frame inputs.
@@ -215,27 +269,7 @@ int main(int argc, char *argv[])
 
         /* Event handling */
 
-        // TODO: Logic for calculating sleep time / reanudating sleep
-        const struct timespec req = {
-            .tv_sec = 0,
-            .tv_nsec = 5 * 1000 * 1000 // 5 ms
-        };
-        int nsleep_ret = nanosleep(&req, NULL);
-        if (nsleep_ret)
-        {
-            switch (errno)
-            {
-            case EFAULT:
-                log_debug("Error copying information from used space during nanosleep");
-                break;
-            case EINTR:
-                log_debug("Nanosleep interrupted by a signal");
-                break;
-            case EINVAL:
-                log_debug("Value of tv_nsec is invalid");
-                break;
-            }
-        }
+
 
 
         while(XPending(x11_display))
@@ -1237,4 +1271,88 @@ int set_pointer_state(player_input_t *input, pointer_state_t new_state)
     }
 
     return 0;
+}
+
+/* Sets the VSync to either false or true.
+   Returns 0 on error, 1 on success, and sets the "vsync" global accordingly.
+   NOTE: It is possible for the system to still force VSync on our application
+   outside our control. We might want to check for this later.
+ */
+int set_vsync(bool new_state)
+{
+
+    static PFNGLXSWAPINTERVALEXTPROC  glXSwapIntervalEXT  = 0;
+    static PFNGLXSWAPINTERVALMESAPROC glXSwapIntervalMESA = 0;
+    static PFNGLXSWAPINTERVALSGIPROC  glXSwapIntervalSGI  = 0;
+
+    static bool initialized = false;
+    if (!initialized)
+    {
+        /* TODO: Check for ARB extensions before trying to get function pointers */
+        glXSwapIntervalEXT  = (PFNGLXSWAPINTERVALEXTPROC) glXGetProcAddressARB((const GLubyte *) "glXSwapIntervalEXT");
+        glXSwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalMESA");
+        glXSwapIntervalSGI  = (PFNGLXSWAPINTERVALSGIPROC) glXGetProcAddressARB((const GLubyte *) "glXSwapIntervalSGI");
+    }
+
+    if (vsync == new_state) /* Nothing to do */
+    {
+        return 1;
+    }
+    else if (new_state == false)
+    {
+        /* Disable Vsync */
+        // TODO: Figure out why this does not work with different order
+        // TODO: Error handling??
+
+        if (glXSwapIntervalMESA)
+        {
+            glXSwapIntervalMESA(0);
+            vsync = false;
+            return 1;
+        }
+        else if (glXSwapIntervalSGI)
+        {
+            glXSwapIntervalSGI(0);
+            vsync = false;
+            return 1;
+        }
+        else if (glXSwapIntervalEXT)
+        {
+            GLXDrawable drawable = glXGetCurrentDrawable();
+            glXSwapIntervalEXT(x11_display, drawable, 0);
+            vsync = false;
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else if (new_state == true)
+    {
+        if (glXSwapIntervalMESA)
+        {
+            glXSwapIntervalMESA(1);
+            vsync = true;
+            return 1;
+        }
+        else if (glXSwapIntervalSGI)
+        {
+            glXSwapIntervalSGI(1);
+            vsync = true;
+            return 1;
+        }
+        else if (glXSwapIntervalEXT)
+        {
+            GLXDrawable drawable = glXGetCurrentDrawable();
+            glXSwapIntervalEXT(x11_display, drawable, 1);
+            vsync = true;
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return 1; /* If we get here it's mostly an error */
 }

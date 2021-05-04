@@ -77,6 +77,12 @@ int framecount = 0;
 entity_t test_triangle;
 entity_t test_pyramid;
 
+/* Timing globals */
+float target_s_per_frame = (1.0f/60.0f); // ~60 fps
+/* We start up the program with the assumption that Vsync is ON.
+   TODO: Check if this is a good assumption on all X11 WMs */
+bool vsync = true;
+
 
 /* OpenGL defines */
 // NOTE: This is some magic so we are able to create OpenGL contexts with an exact GL version
@@ -162,7 +168,6 @@ static inline double get_current_time()
     return currentSeconds;
 }
 
-
 static inline float get_delta_time()
 {
     static double time_lf = 0;
@@ -175,7 +180,6 @@ static inline float get_delta_time()
     time_lf = time_cf;
     return delta;
 }
-
 
 
 /* Functions */
@@ -192,5 +196,6 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
 void draw_bouncing_cube_scene(void);
 void draw_static_cubes_scene(uint segments);
 int set_pointer_state(player_input_t *input, pointer_state_t new_state);
+int set_vsync(bool new_state);
 
 #endif
