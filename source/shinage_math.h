@@ -569,4 +569,16 @@ static inline mat4x4f inverse_mat4x4f(mat4x4f m, bool det_check, bool gauss)
         }
 }
 
+static inline mat4x4f get_rotation_mat4x4f(mat4x4f m)
+{
+    mat4x4f aux =
+    {
+        .a1 = m.a1, .b1 = m.a2, .c1 = m.a3, .d1 = 0,
+        .a2 = m.b1, .b2 = m.b2, .c2 = m.b3, .d2 = 0,
+        .a3 = m.c1, .b3 = m.c2, .c3 = m.c3, .d3 = 0,
+        .a4 = 0,    .b4 = 0,    .c4 = 0,    .d4 = 1
+    };
+    return inverse_mat4x4f(aux, false, false);
+}
+
 #endif
