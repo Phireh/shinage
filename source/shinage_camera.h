@@ -321,6 +321,53 @@ void add_yaw(float angle)
     push(active_mat, mat);
 }
 
+void add_yaw_world_axis(float angle)
+{
+    vec3f camera_pos = get_position();
+
+    if (!active_mat)
+        return;
+
+    mat4x4f mat = pop(active_mat);
+    mat4x4f rotation_matrix_around_y = {
+        .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
+        .a2 = 0.0f,         .b2 = 1.0f,   .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = -sin(angle),  .b3 = 0.0f,   .c3 = cos(angle),   .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,   .c4 = 0.0f,         .d4 =  1.0f
+    };
+
+    /* Translate the camera to 0,0,0 so we can rotate around the world Y axis */
+    mat4x4f translate_to_origin_mat = {
+        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = camera_pos.x,
+        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = camera_pos.y,
+        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = camera_pos.z,
+        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
+    };
+
+    mat4x4f return_from_origin_mat = {
+        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = -camera_pos.x,
+        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = -camera_pos.y,
+        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = -camera_pos.z,
+        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
+    };
+
+
+    /* NOTE: The multiplication order is important. The transformations to the world happen
+       in left-to-right order as we multiply matrices. We want to take the View matrix
+       already created and apply three new transformations to it:
+
+       NewMat = ViewMat * ToOrigin * Rotate * BackFromOrigin
+
+       The left-to-right order is because we use row-first matrices. In OpenGL we'd
+       have to reverse the order of multiplication.
+*/
+
+    mat = mat4x4f_prod(mat, translate_to_origin_mat);
+    mat = mat4x4f_prod(mat, rotation_matrix_around_y);
+    mat = mat4x4f_prod(mat, return_from_origin_mat);
+    push(active_mat, mat);
+}
+
 void add_roll(float angle)
 {
     if (!active_mat)

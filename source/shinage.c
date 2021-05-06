@@ -380,6 +380,12 @@ int main(int argc, char *argv[])
                                     PRESSED,
                                     input_phase_stamp);
                     break;
+                case XK_F2:
+                    set_input_state(&player1_input->f2,
+                                    &player1_last_input->f2,
+                                    PRESSED,
+                                    input_phase_stamp);
+                    break;
                 }
                 break;
 
@@ -469,7 +475,12 @@ int main(int argc, char *argv[])
                                     UNPRESSED,
                                     input_phase_stamp);
                     break;
-
+                case XK_F2:
+                    set_input_state(&player1_input->f2,
+                                    &player1_last_input->f2,
+                                    UNPRESSED,
+                                    input_phase_stamp);
+                    break;
                 }
                 break;
 
@@ -1108,6 +1119,7 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     bool shoulder_left = is_pressed(input->shoulder_left);
     bool shoulder_right = is_pressed(input->shoulder_right);
     bool f1 = is_just_pressed(input->f1);
+    bool f2 = is_just_pressed(input->f2);
     int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;
     bool right_click   = is_just_pressed(input->mouse_left_click);
@@ -1117,10 +1129,19 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     float angle = rps * get_delta_time();
     float mouse_sensitivity = 1/(rps*40.0f);
     float move_sensitivity = 1/20.0f;
+    static bool lock_roll = false;
+
     if (mouse_x)
     {
         set_mat(VIEW);
-        add_yaw(mouse_sensitivity * mouse_x);
+        if (lock_roll)
+        {
+            add_yaw_world_axis(mouse_sensitivity * mouse_x);
+        }
+        else
+        {
+            add_yaw(mouse_sensitivity * mouse_x);
+        }
         //log_debug("Added roll of %f", angle);
     }
     if (mouse_y)
@@ -1167,8 +1188,11 @@ void test_cube_logic(player_input_t *input, entity_t *e)
 
     if (f1)
     {
-        // TODO: Pointer grabbing
         set_pointer_state(input, (input->pointer_state == NORMAL ? GRABBED : NORMAL));
+    }
+    if (f2)
+    {
+        lock_roll = lock_roll == true ? false : true;
     }
 
     if (false) // TODO: Placeholder to please the compiler
