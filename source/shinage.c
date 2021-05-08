@@ -669,7 +669,7 @@ int main(int argc, char *argv[])
         draw_static_cubes_scene(8);
 
         vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
-        render_text("Hi there", 50.0f, 50.0f, 1.0f, font_color);
+        render_text("Hi there", 5.0f, 5.0f, 1.0f, font_color);
 
         glXSwapBuffers(x11_display, x11_window);
 
