@@ -94,11 +94,11 @@ int load_charmap(FT_Face face)
         if (FT_Load_Char(face, (unsigned char)i, FT_LOAD_RENDER))
         {
             log_debug("Failed to load glyph number %d in font %s", i, face->family_name);
-            ++charcount;
             continue;
         }
         else
         {
+            ++charcount;
             /* Generate texture */
             unsigned int face_tex;
             glGenTextures(1, &face_tex);

@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
         log_debug("Default font face loaded");
 
     // Check if we loaded all characters we wanted
-    if (load_charmap(default_face) == sizeof(charmap))
+    if (load_charmap(default_face) == sizeof(charmap)/sizeof(charmap[0]))
         log_debug("Successfully loaded charmap");
     else
         log_debug("Failed to load complete charmap");
