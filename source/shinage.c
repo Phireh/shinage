@@ -165,6 +165,19 @@ int main(int argc, char *argv[])
 
     log_info("Starting OpenGL version %s", glGetString(GL_VERSION));
 
+    // Start the FreeType library and load default font
+    if (!init_freetype(&ft_library))
+        log_debug("FreeType started");
+    if (!load_face(ft_library, default_font_path, &default_face))
+        log_debug("Default font face loaded");
+
+    // Check if we loaded all characters we wanted
+    if (load_charmap(default_face) == sizeof(charmap))
+        log_debug("Successfully loaded charmap");
+    else
+        log_debug("Failed to load complete charmap");
+
+
     // Set title name for our open window
     XStoreName(x11_display, x11_window, "shinage");
 
@@ -177,12 +190,9 @@ int main(int argc, char *argv[])
     XkbSetDetectableAutoRepeat(x11_display, true, &detectable_autorepeat_sup);
     log_debug("Detectable auto rep %d", detectable_autorepeat_sup);
 
-
-
     // How large is the window
     XWindowAttributes x11_window_attr;
     XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
-
 
 
     // Disable vsync
@@ -638,6 +648,7 @@ int main(int argc, char *argv[])
         // NOTE: This is just for testing that OpenGL actually works
         glClearColor(1.0f, 0.6f, 1.0f, 1.0f);
         glEnable(GL_DEPTH_TEST);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         static bool init_mats = false;
@@ -656,6 +667,9 @@ int main(int argc, char *argv[])
 
         //draw_bouncing_cube_scene();
         draw_static_cubes_scene(8);
+
+        vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
+        render_text("Hi there", 50.0f, 50.0f, 1.0f, font_color);
 
         glXSwapBuffers(x11_display, x11_window);
 
@@ -1183,6 +1197,7 @@ int link_gl_functions(void)
     glUniform1i               = (PFNGLUNIFORM1IPROC)              glXGetProcAddress((const GLubyte *)"glUniform1i");
     glVertexAttribDivisor     = (PFNGLVERTEXATTRIBDIVISORPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribDivisor");
     glDrawArraysInstanced     = (PFNGLDRAWARRAYSINSTANCEDPROC)    glXGetProcAddress((const GLubyte *)"glDrawArraysInstanced");
+    glBufferSubData           = (PFNGLBUFFERSUBDATAPROC)          glXGetProcAddress((const GLubyte *)"glBufferSubData");
 
     return 1;
 }

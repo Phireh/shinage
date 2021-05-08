@@ -34,6 +34,8 @@
 #include "shinage_input.h"
 #include "shinage_opengl_signatures.h"
 #include "shinage_shaders.h"
+
+/* shinage_text also includes ft2build.h and FT_FREETYPE_H */
 #include "shinage_text.h"
 
 /* Types */
@@ -158,6 +160,19 @@ static inline float get_delta_time()
 
     time_lf = time_cf;
     return delta;
+}
+
+/* Convenience functions for checking current window dimentions.
+   Currently only used inside shinage_text */
+
+int get_window_width()
+{
+    return x11_window_width;
+}
+
+int get_window_height()
+{
+    return x11_window_height;
 }
 
 

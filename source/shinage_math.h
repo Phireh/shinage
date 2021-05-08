@@ -594,4 +594,18 @@ static inline mat4x4f get_rotation_mat4x4f(mat4x4f m)
     return inverse_mat4x4f(aux, false, false);
 }
 
+/* Orthogonal projection matrix with an infinite clip, atm used for text */
+mat4x4f orthogonal_proj_matrix(float left, float right, float top, float bottom)
+{
+    mat4x4f ortho = {
+        .a1 = 2/(right - left),
+        .b2 = 2/(top - bottom),
+        .c3 = 1,
+        .d1 = -(right + left)/(right - left),
+        .d2 = -(top + bottom)/(top-bottom),
+        .d4 = 1
+    };
+    return ortho;
+}
+
 #endif

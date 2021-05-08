@@ -31,5 +31,6 @@ PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
 PFNGLUNIFORM1IPROC               glUniform1i;
 PFNGLVERTEXATTRIBDIVISORPROC     glVertexAttribDivisor;
 PFNGLDRAWARRAYSINSTANCEDPROC     glDrawArraysInstanced;
+PFNGLBUFFERSUBDATAPROC           glBufferSubData;
 
 #endif
