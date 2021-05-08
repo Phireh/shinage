@@ -24,6 +24,7 @@ char *font_vertex_shader =
     "uniform mat4 projMatrix;\n" \
     "void main() {\n" \
     "gl_Position = projMatrix * vec4(vertex.xy, 0.0, 1.0);\n" \
+    "TexCoords = vertex.zw;\n" \
     "}";
 
 char *font_fragment_shader =
@@ -198,12 +199,12 @@ void render_text(char *text, float x, float y, float scale, vec3f color)
         float h = ch.size.y * scale;
 
         float vertices[6][4] = {
-            { xpos,     ypos + h,   0.0f, 0.0f },
             { xpos,     ypos,       0.0f, 1.0f },
+            { xpos,     ypos + h,   0.0f, 0.0f },
             { xpos + w, ypos,       1.0f, 1.0f },
 
-            { xpos,     ypos + h,   0.0f, 0.0f },
             { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos,     ypos + h,   0.0f, 0.0f },
             { xpos + w, ypos + h,   1.0f, 0.0f }
         };
 
