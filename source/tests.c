@@ -17,7 +17,7 @@
 #define epsilon 0.0000001f
 
 
-int mat4_eq(mat4x4f m1, mat4x4f m2)
+int mat4_eq_debug(mat4x4f m1, mat4x4f m2)
 {
     int res = 1;
     for (int i = 0; i < 16; ++i)
@@ -32,7 +32,7 @@ int mat4_eq(mat4x4f m1, mat4x4f m2)
     return res;
 }
 
-int vec4_eq(vec4f v1, vec4f v2)
+int vec4_eq_debug(vec4f v1, vec4f v2)
 {
     int res = 1;
     for (int i = 0; i < 4; ++i)
@@ -85,7 +85,7 @@ int main()
         .a4 = -426, .b4 = -484, .c4 = -542, .d4 = -600
     };
 
-    if (mat4_eq(m3_t1, m4_t1))
+    if (mat4_eq_debug(m3_t1, m4_t1))
     {
         ++ok_count;
         log_ok("Matrix multiplication");
@@ -97,7 +97,7 @@ int main()
     }
 
     /* Expected result of addition is the zero_matrix */
-    if (mat4_eq(zero_matrix_4x4, summat4x4f(m1_t1, m2_t1, 0)))
+    if (mat4_eq_debug(zero_matrix_4x4, summat4x4f(m1_t1, m2_t1, 0)))
     {
         ++ok_count;
         log_ok("Matrix addition");
@@ -113,7 +113,7 @@ int main()
     for (int i = 0; i < 16; ++i)
         m1_t3.v[i] = (i+1)*2;
 
-    if (mat4_eq(m1_t3, summat4x4f(m1_t1, m2_t1, 1)))
+    if (mat4_eq_debug(m1_t3, summat4x4f(m1_t1, m2_t1, 1)))
     {
         ++ok_count;
         log_ok("Matrix subtraction");
@@ -126,7 +126,7 @@ int main()
 
     /* Expected result of scalar multiplication is the same as previous test */
     mat4x4f m1_t4 = m1_t3;
-    if (mat4_eq(m1_t4, scalar_mat4x4f_prod(2, m1_t1)))
+    if (mat4_eq_debug(m1_t4, scalar_mat4x4f_prod(2, m1_t1)))
     {
         ++ok_count;
         log_ok("Matrix x scalar multiplication");
@@ -142,7 +142,7 @@ int main()
     /* Expected value of matrix x vector multiplication */
     vec4f v2_t5 = { .x = 30, .y = 70, .z = 110, .w = 150 };
 
-    if (vec4_eq(mat4x4f_vec4f_prod(m1_t1, v1_t5), v2_t5))
+    if (vec4_eq_debug(mat4x4f_vec4f_prod(m1_t1, v1_t5), v2_t5))
     {
         ++ok_count;
         log_ok("Matrix x vector multiplication");
@@ -234,7 +234,7 @@ int main()
     /* Expected result of inverse matrix */
     mat4x4f m1_t11 = { .a1 = 1, .b2 = 0.5f, .c3 = (1.0f/3.0f), .d4 = 0.25f };
 
-    if (mat4_eq(inverse_mat4x4f(m1_t10, 0, 1), m1_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m1_t10, 0, 1), m1_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse Gauss 1/3");
@@ -260,7 +260,7 @@ int main()
         .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
     };
 
-    if (mat4_eq(inverse_mat4x4f(m2_t11, 0, 1), m3_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m2_t11, 0, 1), m3_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse Gauss 2/3");
@@ -286,7 +286,7 @@ int main()
         .d4 = 1
     };
 
-    if (mat4_eq(inverse_mat4x4f(m4_t11, 0, 1), m5_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m4_t11, 0, 1), m5_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse Gauss 3/3");
@@ -297,7 +297,7 @@ int main()
         log_fail("Matrix inverse Gauss 3/3");
     }
 
-    if (mat4_eq(inverse_mat4x4f(m1_t10, 0, 0), m1_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m1_t10, 0, 0), m1_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse non-Gauss 1/2");
@@ -308,7 +308,7 @@ int main()
         log_fail("Matrix inverse non-Gauss 1/2");
     }
 
-    if (mat4_eq(inverse_mat4x4f(m2_t11, 0, 0), m3_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m2_t11, 0, 0), m3_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse non-Gauss 2/2");
@@ -338,7 +338,7 @@ int main()
 
     mat4x4f m2_t12 = peek(mats.view);
 
-    if (mat4_eq(m2_t12, m1_t12))
+    if (mat4_eq_debug(m2_t12, m1_t12))
     {
         ++ok_count;
         log_ok("View matrix");

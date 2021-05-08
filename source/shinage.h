@@ -32,7 +32,9 @@
 #include "shinage_math.h"
 #include "shinage_camera.h"
 #include "shinage_input.h"
-
+#include "shinage_opengl_signatures.h"
+#include "shinage_shaders.h"
+#include "shinage_text.h"
 
 /* Types */
 typedef enum {
@@ -90,29 +92,6 @@ bool vsync = true;
 #define GLX_CONTEXT_MINOR_VERSION_ARB		0x2092
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-/* OpenGL function signatures */
-PFNGLUSEPROGRAMPROC              glUseProgram;
-PFNGLGETSHADERIVPROC             glGetShaderiv;
-PFNGLSHADERSOURCEPROC            glShaderSource;
-PFNGLCOMPILESHADERPROC           glCompileShader;
-PFNGLGETSHADERINFOLOGPROC        glGetShaderInfoLog;
-PFNGLCREATESHADERPROC            glCreateShader;
-PFNGLCREATEPROGRAMPROC           glCreateProgram;
-PFNGLDELETESHADERPROC            glDeleteShader;
-PFNGLGETPROGRAMIVPROC            glGetProgramiv;
-PFNGLGETPROGRAMINFOLOGPROC       glGetProgramInfoLog;
-PFNGLATTACHSHADERPROC            glAttachShader;
-PFNGLLINKPROGRAMPROC             glLinkProgram;
-PFNGLGENVERTEXARRAYSPROC         glGenVertexArrays;
-PFNGLGENBUFFERSPROC              glGenBuffers;
-PFNGLBINDVERTEXARRAYPROC         glBindVertexArray;
-PFNGLBINDBUFFERPROC              glBindBuffer;
-PFNGLBUFFERDATAPROC              glBufferData;
-PFNGLVERTEXATTRIBPOINTERPROC     glVertexAttribPointer;
-PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
-PFNGLUNIFORM3FPROC               glUniform3f;
-PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation;
-PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
 
 /* OpenGL globals */
 GLXContext glx_context;
@@ -188,8 +167,6 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id);
 void draw_gl_pyramid(float *colours);
 void draw_gl_cube(float *colours);
 int link_gl_functions(void);
-unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source);
-unsigned int build_shader(char *source, int type);
 void test_entity_logic(player_input_t *input, entity_t *e);
 void test_cube_logic(player_input_t *input, entity_t *e);
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);

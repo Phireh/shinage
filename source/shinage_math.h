@@ -228,6 +228,19 @@ static inline float get_angle3f(vec3f v1, vec3f v2)
     return res;
 }
 
+int vec4_eq(vec4f v1, vec4f v2)
+{
+    int res = 1;
+    for (int i = 0; i < 4; ++i)
+        if (fabs(v1.v[i] - v2.v[i]) > epsilon)
+        {
+            res = 0;
+        }
+
+    return res;
+}
+
+
 static inline vec4f sum4f(vec4f v1, vec4f v2)
 {
     vec4f result = { .x = v1.x + v2.x, .y = v1.y + v2.y, .z = v1.z + v2.z , .w = v1.w + v2.w };

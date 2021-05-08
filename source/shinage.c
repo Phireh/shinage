@@ -1063,51 +1063,6 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
     log_debug_vec4f(vs_div, count, "SCREEN SPACE (PERSPECTIVE DIVISION)");
 }
 
-unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source)
-{
-    char infoLog[512];
-    unsigned int vertex_shader = build_shader(vertex_shader_source, GL_VERTEX_SHADER);
-    unsigned int fragment_shader = build_shader(fragment_shader_source, GL_FRAGMENT_SHADER);
-
-    unsigned int program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-
-    // print linking errors if any
-    int success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success)         // TODO: Maybe better error handling?
-    {
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        printf("Error: shader linking failed: %s\n", infoLog);
-    }
-    else
-    {
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
-    }
-    return program;
-}
-
-
-unsigned int build_shader(char *source, int type)
-{
-    char infoLog[512];
-    unsigned int shader = glCreateShader(type);
-    glShaderSource(shader, 1, (const GLchar * const *)(&source), NULL);
-    glCompileShader(shader);
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        printf("Error: shader compilation failed: %s\n", infoLog);
-    }
-    // TODO: Maybe better error handling?
-    return shader;
-}
-
 void test_cube_logic(player_input_t *input, entity_t *e)
 {
     bool right   = is_pressed(input->right);
@@ -1220,10 +1175,15 @@ int link_gl_functions(void)
     glBindBuffer              = (PFNGLBINDBUFFERPROC)             glXGetProcAddress((const GLubyte *)"glBindBuffer");
     glBufferData              = (PFNGLBUFFERDATAPROC)             glXGetProcAddress((const GLubyte *)"glBufferData");
     glVertexAttribPointer     = (PFNGLVERTEXATTRIBPOINTERPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribPointer");
+    glVertexAttribIPointer    = (PFNGLVERTEXATTRIBIPOINTERPROC)   glXGetProcAddress((const GLubyte *)"glVertexAttribIPointer");
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)glXGetProcAddress((const GLubyte *)"glEnableVertexAttribArray");
     glUniform3f               = (PFNGLUNIFORM3FPROC)              glXGetProcAddress((const GLubyte *)"glUniform3f");
     glGetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)     glXGetProcAddress((const GLubyte *)"glGetUniformLocation");
     glUniformMatrix4fv        = (PFNGLUNIFORMMATRIX4FVPROC)       glXGetProcAddress((const GLubyte *)"glUniformMatrix4fv");
+    glUniform1i               = (PFNGLUNIFORM1IPROC)              glXGetProcAddress((const GLubyte *)"glUniform1i");
+    glVertexAttribDivisor     = (PFNGLVERTEXATTRIBDIVISORPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribDivisor");
+    glDrawArraysInstanced     = (PFNGLDRAWARRAYSINSTANCEDPROC)    glXGetProcAddress((const GLubyte *)"glDrawArraysInstanced");
+
     return 1;
 }
 
