@@ -82,7 +82,8 @@ entity_t test_triangle;
 entity_t test_pyramid;
 
 /* Timing globals */
-float target_s_per_frame = (1.0f/60.0f); // ~60 fps
+double target_s_per_frame = (1.0/60.0); // ~60 fps
+double dt; // time diff between this and last frame
 /* We start up the program with the assumption that Vsync is ON.
    TODO: Check if this is a good assumption on all X11 WMs */
 bool vsync = true;
@@ -189,5 +190,6 @@ void draw_bouncing_cube_scene(void);
 void draw_static_cubes_scene(uint segments);
 int set_pointer_state(player_input_t *input, pointer_state_t new_state);
 int set_vsync(bool new_state);
+void draw_fps_counter();
 
 #endif

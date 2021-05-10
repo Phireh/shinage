@@ -201,10 +201,13 @@ int main(int argc, char *argv[])
         log_debug("Error trying to set Vsync off");
     }
 
+
     /* Main loop */
-    double curr_frame_start_time;
-    double last_frame_start_time;
-    double dt;
+    double curr_frame_start_time = get_current_time();
+    double last_frame_start_time = 0.0;
+    double sleep_time = 0.0;
+    double real_time_last_frame = 0.0;
+
     XEvent x11_event;
     KeySym keysym = 0;
     main_loop_state_t main_loop_state = RUNNING;
@@ -218,17 +221,21 @@ int main(int argc, char *argv[])
             curr_frame_start_time = get_current_time();
             dt = curr_frame_start_time - last_frame_start_time;
 
-            double extra_s_last_frame = (target_s_per_frame - dt);
-            //log_debug("Delta time %f s, we should sleep for %f s", dt, extra_s_last_frame);
+            real_time_last_frame = dt - sleep_time;
+            sleep_time = target_s_per_frame - real_time_last_frame;
 
-            if (extra_s_last_frame > 0.0f) /* Only try to sleep if we actually need to */
+            //log_debug("Delta time %f , we should sleep for %f s", dt, sleep_time);
+
+
+            if (sleep_time > 0.0) /* Only try to sleep if we actually need to */
             {
                 const struct timespec req = {
                     .tv_sec = 0,
                     // TODO: Figure out if we need extra time
-                    .tv_nsec = extra_s_last_frame * 1000 * 1000 * 1000 // we sleep for enough ns to burn our extra time
+                    .tv_nsec = sleep_time * 1000 * 1000 * 1000 // we sleep for enough ns to burn our extra time
                 };
-                int nsleep_ret = nanosleep(&req, NULL);
+                struct timespec rem;
+                int nsleep_ret = nanosleep(&req, &rem);
                 if (nsleep_ret)
                 {
                     switch (errno)
@@ -668,8 +675,10 @@ int main(int argc, char *argv[])
         //draw_bouncing_cube_scene();
         draw_static_cubes_scene(8);
 
-        vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
-        render_text("Hi there", 5.0f, 5.0f, 1.0f, font_color);
+
+
+        draw_fps_counter();
+
 
         glXSwapBuffers(x11_display, x11_window);
 
@@ -1302,25 +1311,23 @@ int set_vsync(bool new_state)
         {
             glXSwapIntervalMESA(0);
             vsync = false;
-            return 1;
         }
-        else if (glXSwapIntervalSGI)
+        if (glXSwapIntervalSGI)
         {
             glXSwapIntervalSGI(0);
             vsync = false;
-            return 1;
         }
-        else if (glXSwapIntervalEXT)
+        if (glXSwapIntervalEXT)
         {
             GLXDrawable drawable = glXGetCurrentDrawable();
             glXSwapIntervalEXT(x11_display, drawable, 0);
-            vsync = false;
-            return 1;
+            vsync = false;            return 1;
         }
-        else
+        if (!glXSwapIntervalMESA && !glXSwapIntervalSGI && !glXSwapIntervalEXT)
         {
             return 0;
         }
+        return 1;
     }
     else if (new_state == true)
     {
@@ -1328,25 +1335,33 @@ int set_vsync(bool new_state)
         {
             glXSwapIntervalMESA(1);
             vsync = true;
-            return 1;
         }
-        else if (glXSwapIntervalSGI)
+        if (glXSwapIntervalSGI)
         {
             glXSwapIntervalSGI(1);
             vsync = true;
-            return 1;
         }
-        else if (glXSwapIntervalEXT)
+        if (glXSwapIntervalEXT)
         {
             GLXDrawable drawable = glXGetCurrentDrawable();
             glXSwapIntervalEXT(x11_display, drawable, 1);
             vsync = true;
-            return 1;
         }
-        else
+        if (!glXSwapIntervalMESA && !glXSwapIntervalSGI && !glXSwapIntervalEXT)
         {
             return 0;
         }
+        return 1;
     }
-    return 1; /* If we get here it's mostly an error */
+    return 0; /* If we get here it's mostly an error */
+}
+
+void draw_fps_counter()
+{
+    static char str[32] = "0 FPS (0 ms)";
+    /* Only draw once every few frames to avoid excessive flickering */
+    if (!(framecount % 10))
+        sprintf(str, "%.2f FPS (%.2f ms)", 1.0/dt, dt*1000.0);
+    vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
+    render_text(str, 5.0f, x11_window_height - 20.0f, 0.5f, font_color);
 }
