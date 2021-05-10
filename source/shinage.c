@@ -1359,9 +1359,15 @@ int set_vsync(bool new_state)
 void draw_fps_counter()
 {
     static char str[32] = "0 FPS (0 ms)";
-    /* Only draw once every few frames to avoid excessive flickering */
-    if (!(framecount % 10))
-        sprintf(str, "%.2f FPS (%.2f ms)", 1.0/dt, dt*1000.0);
+    static double total = 0.0;
+    const int freq = 30;
+    total += dt;
+    /* Only recalculate every few frames to avoid excessive flickering */
+    if (framecount && !(framecount % freq))
+    {
+        sprintf(str, "%.2f FPS (%.2f ms)", (1.0*freq/total), total*1000.0/freq);
+        total = 0.0;
+    }
     vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
     render_text(str, 5.0f, x11_window_height - 20.0f, 0.5f, font_color);
 }
