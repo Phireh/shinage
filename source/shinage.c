@@ -172,10 +172,11 @@ int main(int argc, char *argv[])
         log_debug("Default font face loaded");
 
     // Check if we loaded all characters we wanted
-    if (load_charmap(default_face) == sizeof(charmap)/sizeof(charmap[0]))
+    int loaded_chars = load_charmap(default_face);
+    if (loaded_chars == sizeof(charmap)/sizeof(charmap[0]))
         log_debug("Successfully loaded charmap");
     else
-        log_debug("Failed to load complete charmap");
+        log_debug("Failed to load complete charmap. %d chars loaded", loaded_chars);
 
 
     // Set title name for our open window
@@ -725,7 +726,12 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
     return 0;
 }
 
-void draw_gl_pyramid(float *colours)
+void build_programs()
+{
+    simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
+}
+
+void draw_gl_pyramid(float *colours, unsigned int program)
 {
     float vertices[] = {
        0.0f,   0.43f,   0.0f,
@@ -740,22 +746,19 @@ void draw_gl_pyramid(float *colours)
         3,1,2, 0,1,2, 0,3,1, 0,2,3
       };
 
-    static unsigned int pyramid_program = 0;
-    if (!pyramid_program)
-        pyramid_program = make_gl_program(simple_color_vertex_shader, simple_color_fragment_shader);
-    glUseProgram(pyramid_program);
+    glUseProgram(program);
 
     static int mmatrix_uniform_pos = -1;
     if (mmatrix_uniform_pos == -1)
-        mmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "modelMatrix");
+        mmatrix_uniform_pos = glGetUniformLocation(program, "modelMatrix");
 
     static int vmatrix_uniform_pos = -1;
     if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "viewMatrix");
+        vmatrix_uniform_pos = glGetUniformLocation(program, "viewMatrix");
 
     static int pmatrix_uniform_pos = -1;
     if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(pyramid_program, "projMatrix");
+        pmatrix_uniform_pos = glGetUniformLocation(program, "projMatrix");
 
 
     mat4x4f mmatrix = peek(mats.model);
@@ -802,7 +805,7 @@ void draw_gl_pyramid(float *colours)
 
 bool show_cpu_calculated_matrix;
 
-void draw_gl_cube(float *colours)
+void draw_gl_cube(float *colours, unsigned int program)
 {
     float vertices[] = {
          0.5f,  0.5f,  0.5f,
@@ -821,22 +824,19 @@ void draw_gl_cube(float *colours)
         3,2,7, 2,6,7, 4,0,7, 0,3,7, 5,4,6, 4,7,6
     };
 
-    static unsigned int cube_program = 0;
-    if (!cube_program)
-        cube_program = make_gl_program(simple_color_vertex_shader, simple_color_fragment_shader);
-    glUseProgram(cube_program);
+    glUseProgram(program);
 
     static int mmatrix_uniform_pos = -1;
     if (mmatrix_uniform_pos == -1)
-        mmatrix_uniform_pos = glGetUniformLocation(cube_program, "modelMatrix");
+        mmatrix_uniform_pos = glGetUniformLocation(program, "modelMatrix");
 
     static int vmatrix_uniform_pos = -1;
     if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(cube_program, "viewMatrix");
+        vmatrix_uniform_pos = glGetUniformLocation(program, "viewMatrix");
 
     static int pmatrix_uniform_pos = -1;
     if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(cube_program, "projMatrix");
+        pmatrix_uniform_pos = glGetUniformLocation(program, "projMatrix");
 
 
     mat4x4f mmatrix = peek(mats.model);
@@ -908,8 +908,7 @@ void draw_static_cubes_scene(uint segments)
     translate_matrix(trans_the_origin);
     vec3f scale = { .x = 0.1f, .y = 0.1f, .z = 0.1f };
     scale_matrix(scale);
-    //draw_gl_cube(colours[8]); // The center
-    draw_gl_pyramid(colours[8]); // The center
+    draw_gl_pyramid(colours[8], simple_color_program); // The center
     scale.x = 10; scale.y = 10; scale.z = 10;
     scale_matrix(scale);
 
@@ -925,7 +924,7 @@ void draw_static_cubes_scene(uint segments)
         translate_matrix(trans_from_origin);
         vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube(colours[1]);
+        draw_gl_cube(colours[1], simple_color_program);
         pop_matrix();
         rotate_matrix(rot_axis, rot_angle);
     }
@@ -938,7 +937,7 @@ void draw_static_cubes_scene(uint segments)
         translate_matrix(trans_from_origin);
         vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube(colours[2]);
+        draw_gl_cube(colours[2], simple_color_program);
         pop_matrix();
         rotate_matrix(rot_axis, rot_angle);
     }
@@ -951,7 +950,7 @@ void draw_static_cubes_scene(uint segments)
         translate_matrix(trans_from_origin);
         vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
         scale_matrix(scale);
-        draw_gl_cube(colours[4]);
+        draw_gl_cube(colours[4], simple_color_program);
         pop_matrix();
         rotate_matrix(rot_axis, rot_angle);
     }
@@ -1017,7 +1016,7 @@ void draw_bouncing_cube_scene()
             .pnt = { .x = 0, .y = 0, .z = 0 }
         };
     rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube(colours);
+    draw_gl_cube(colours, simple_color_program);
 
     // Stacking another matrix (copies the previous transformations)
     push_matrix();
@@ -1025,7 +1024,7 @@ void draw_bouncing_cube_scene()
     translation.x = 0; translation.y = 2; translation.z = 0;
     translate_matrix(translation);
     rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube(colours);
+    draw_gl_cube(colours, simple_color_program);
     // Popping the matrix removes the top matrix from the stack
     pop_matrix();
     // The last few transformations on the MODEL matrix have been "undone"
@@ -1039,7 +1038,7 @@ void draw_bouncing_cube_scene()
     translation.x = 0; translation.y = 2; translation.z = 0;
     translate_matrix(translation);
     rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube(colours);
+    draw_gl_cube(colours, simple_color_program);
     pop_matrix();
 
     pop_matrix();

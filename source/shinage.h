@@ -34,6 +34,8 @@
 #include "shinage_input.h"
 #include "shinage_opengl_signatures.h"
 #include "shinage_shaders.h"
+#include "shinage_scene.h"
+#include "shinage_utils.h"
 
 /* shinage_text also includes ft2build.h and FT_FREETYPE_H */
 #include "shinage_text.h"
@@ -99,27 +101,9 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
 /* OpenGL globals */
 GLXContext glx_context;
 
-char *simple_color_vertex_shader =
-    "#version 150\n"      \
-    "in vec3 position;\n" \
-    "in vec3 vColor;\n" \
-    "out vec3 fColor;\n" \
-    "uniform mat4 modelMatrix;\n"  \
-    "uniform mat4 viewMatrix;\n"  \
-    "uniform mat4 projMatrix;\n"  \
-    "void main() {\n" \
-    "gl_Position = projMatrix*viewMatrix*modelMatrix*vec4(position, 1.0);\n" \
-    "fColor = vColor;\n" \
-    "}";
-
-char *simple_color_fragment_shader =
-    "#version 150\n" \
-    "out vec4 out_color;\n" \
-    "in vec3 fColor;\n" \
-    "void main() {\n" \
-    "out_color = vec4(fColor, 1.0);\n" \
-    "}";
-
+char *simple_color_vertex_shader_path = "./shaders/simple_color.vert";
+char *simple_color_fragment_shader_path = "./shaders/simple_color.frag";
+unsigned int simple_color_program = 0;
 
 /* Misc. inline functions */
 
@@ -180,8 +164,8 @@ int get_window_height()
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
 //void draw_gl_triangle(void);
-void draw_gl_pyramid(float *colours);
-void draw_gl_cube(float *colours);
+void draw_gl_pyramid(float *colours, unsigned int program);
+void draw_gl_cube(float *colours, unsigned int program);
 int link_gl_functions(void);
 void test_entity_logic(player_input_t *input, entity_t *e);
 void test_cube_logic(player_input_t *input, entity_t *e);
@@ -191,5 +175,6 @@ void draw_static_cubes_scene(uint segments);
 int set_pointer_state(player_input_t *input, pointer_state_t new_state);
 int set_vsync(bool new_state);
 void draw_fps_counter();
+void build_programs();
 
 #endif

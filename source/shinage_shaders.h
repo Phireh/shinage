@@ -5,6 +5,7 @@
 #include <GL/glext.h>
 #include "shinage_opengl_signatures.h"
 #include "shinage_debug.h"
+#include "shinage_utils.h"
 
 
 unsigned int build_shader(char *source, int type)
@@ -19,17 +20,24 @@ unsigned int build_shader(char *source, int type)
     {
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
         char *type_str = type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
-        log_debug("Error: %s shader compilation failed: %s\n", type_str, infoLog);
+        log_err("Error: %s shader compilation failed: %s\n", type_str, infoLog);
     }
     // TODO: Maybe better error handling?
     return shader;
 }
 
-unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_source)
+unsigned int build_shader_from_file(char *pathname, int type)
+{
+    char *file_contents = load_file(pathname);
+    unsigned int shader = build_shader(file_contents, type);
+    return shader;
+}
+
+unsigned int make_gl_program(char *pathname_vertex, char *pathname_fragment)
 {
     char infoLog[512];
-    unsigned int vertex_shader = build_shader(vertex_shader_source, GL_VERTEX_SHADER);
-    unsigned int fragment_shader = build_shader(fragment_shader_source, GL_FRAGMENT_SHADER);
+    unsigned int vertex_shader = build_shader_from_file(pathname_vertex, GL_VERTEX_SHADER);
+    unsigned int fragment_shader = build_shader_from_file(pathname_fragment, GL_FRAGMENT_SHADER);
 
     unsigned int program = glCreateProgram();
     glAttachShader(program, vertex_shader);
@@ -42,7 +50,7 @@ unsigned int make_gl_program(char *vertex_shader_source, char *fragment_shader_s
     if (!success)         // TODO: Maybe better error handling?
     {
         glGetProgramInfoLog(program, 512, NULL, infoLog);
-        log_debug("Error: shader linking failed: %s\n", infoLog);
+        log_err("Error: shader linking failed: %s\n", infoLog);
     }
     else
     {

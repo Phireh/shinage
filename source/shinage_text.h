@@ -17,27 +17,9 @@ typedef struct {
 
 char *default_font_path = "fonts/OpenSans-Regular.ttf";
 
-char *font_vertex_shader =
-    "#version 150\n" \
-    "in vec4 vertex;\n" \
-    "out vec2 TexCoords;\n" \
-    "uniform mat4 projMatrix;\n" \
-    "void main() {\n" \
-    "gl_Position = projMatrix * vec4(vertex.xy, 0.0, 1.0);\n" \
-    "TexCoords = vertex.zw;\n" \
-    "}";
-
-char *font_fragment_shader =
-    "#version 150\n" \
-    "in vec2 TexCoords;\n" \
-    "out vec4 color;\n" \
-    "uniform sampler2D text;\n" \
-    "uniform vec3 textColor;\n" \
-    "void main() {\n" \
-    "vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);\n" \
-    "color = vec4(textColor, 1.0) * sampled;\n" \
-    "}";
-
+char *font_vertex_shader_path = "./shaders/font.vert";
+char *font_fragment_shader_path = "./shaders/font.frag";
+unsigned int font_program = 0;
 
 FT_Library ft_library;
 FT_Face default_face;
@@ -143,14 +125,13 @@ void render_text(char *text, float x, float y, float scale, vec3f color)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
 
-    static unsigned int text_program = 0;
-    if (!text_program)
-        text_program = make_gl_program(font_vertex_shader, font_fragment_shader);
-    glUseProgram(text_program);
+    if (!font_program)
+        font_program = make_gl_program(font_vertex_shader_path, font_fragment_shader_path);
+    glUseProgram(font_program);
 
     static int pmatrix_uniform_pos = -1;
     if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(text_program, "projMatrix");
+        pmatrix_uniform_pos = glGetUniformLocation(font_program, "projMatrix");
 
     mat4x4f pmatrix;
     pmatrix = orthogonal_proj_matrix(0.0f, get_window_width(), 0.0f, get_window_height());
@@ -158,7 +139,7 @@ void render_text(char *text, float x, float y, float scale, vec3f color)
 
     static int color_uniform_pos = -1;
     if (color_uniform_pos == -1)
-        color_uniform_pos = glGetUniformLocation(text_program, "textColor");
+        color_uniform_pos = glGetUniformLocation(font_program, "textColor");
 
     glUniform3f(color_uniform_pos, color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
