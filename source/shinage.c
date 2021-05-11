@@ -659,6 +659,14 @@ int main(int argc, char *argv[])
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Shaders init
+        static bool programs_init = false;
+        if (!programs_init)
+        {
+            build_programs();
+            programs_init = true;
+        }
+
         static bool init_mats = false;
         if (!init_mats)
         {
