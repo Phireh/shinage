@@ -1,6 +1,10 @@
 #ifndef SHINAGE_STACK_STRUCTURES_H
 #define SHINAGE_STACK_STRUCTURES_H
+
 #include "shinage_math.h"
+#include "shinage_debug.h"
+#include "shinage_stack_structures.h"
+
 #include <stdlib.h>
  
 typedef struct

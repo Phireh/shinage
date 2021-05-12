@@ -30,7 +30,7 @@
 /* Internal includes */
 #include "shinage_debug.h"
 #include "shinage_math.h"
-#include "shinage_camera.h"
+#include "shinage_matrix_stack_ops.h"
 #include "shinage_input.h"
 #include "shinage_opengl_signatures.h"
 #include "shinage_shaders.h"
