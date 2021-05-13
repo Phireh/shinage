@@ -115,6 +115,7 @@ const vec3f x_dir_vec3f = { .x = 1, .y = 0, .z = 0 };
 const vec3f y_dir_vec3f = { .x = 0, .y = 1, .z = 0 };
 const vec3f z_dir_vec3f = { .x = 0, .y = 0, .z = 1 };
 const vec3f zero_vec3f  = { .x = 0, .y = 0, .z = 0 };
+const vec3f nan_vec3f  = { .x = NAN, .y = NAN, .z = NAN };
 
 const vec4f zero_vec4f  = { .x = 0, .y = 0, .z = 0, .w = 0 };
 

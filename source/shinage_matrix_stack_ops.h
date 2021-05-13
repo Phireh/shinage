@@ -52,13 +52,8 @@ void set_mat(matrix_t mat)
  *   NOTE: The up vector is the subjective vertical. Rotation around the w vector. It has to be perpendicular to the look vector
  *   Modifies the VIEW matrix.
  */
-void look_at_matstack(matrix_stack_t *mats, vec3f e, vec3f poi, vec3f up)
+mat4x4f get_look_at_mat4x4f(vec3f e, vec3f poi, vec3f up)
 {
-    if (!mats)
-        return;
-
-    pop(mats);
-
     vec3f f = normalize3f(diff3f(poi, e));
     vec3f u = normalize3f(up);
     vec3f s = normalize3f(cross_product3f(f, u));
@@ -69,26 +64,25 @@ void look_at_matstack(matrix_stack_t *mats, vec3f e, vec3f poi, vec3f up)
         .a3 = -f.x,  .b3 = -f.y,  .c3 = -f.z,  .d3 =  dot_product3f(f, e),
         .a4 =  0.0f, .b4 =  0.0f, .c4 =  0.0f, .d4 = 1.0f
     };
-    push(mats, mat);
+    return mat;
 }
 
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
+    if (!active_mat)
+        return;
 
-    look_at_matstack(active_mat, e, poi, up);
+    pop(active_mat);
+    mat4x4f aux_mat = get_look_at_mat4x4f(e, poi, up);
+    push(active_mat, aux_mat);
 }
 
 /*
  *   Sets the camera projection as perspective
  *   Modifies the PROJECTION matrix
  */
-void perspective_camera_matstack(matrix_stack_t *mats, float fov_y, float ar, float n, float f)
+mat4x4f get_perspective_camera_mat4x4f(float fov_y, float ar, float n, float f)
 {
-    if (!mats)
-        return;
-
-    pop(mats);
-
     float tan_fov = tan( fov_y * 0.5 );
     float z_range = n - f;
 
@@ -98,12 +92,17 @@ void perspective_camera_matstack(matrix_stack_t *mats, float fov_y, float ar, fl
         .a3 = 0.0f,                  .b3 = 0.0f,           .c3 = (f + n) / z_range,   .d3 = 2*f*n / z_range,
         .a4 = 0.0f,                  .b4 = 0.0f,           .c4 = -1.0,                .d4 = 0.0f
     };
-    push(mats, mat);
+    return mat;
 }
 
 void perspective_camera(float fov_y, float ar, float n, float f)
 {
-	perspective_camera_matstack(active_mat, fov_y, ar, n, f);
+	if (!active_mat)
+        return;
+
+    pop(active_mat);
+    mat4x4f aux_mat = get_perspective_camera_mat4x4f(fov_y, ar, n, f);
+    push(active_mat, aux_mat);
 }
 
 /* NOTE: In our representation the camera lookAt vector has opposite sign
@@ -113,12 +112,9 @@ void perspective_camera(float fov_y, float ar, float n, float f)
    This function is meant to be more general, so the callee is responsible
    for remembering that. A convenience function is provided below.
  */
-void translate_matrix_matstack(matrix_stack_t *mats, vec3f desp)
+mat4x4f get_translated_matrix_mat4x4f(mat4x4f mat, vec3f desp)
 {
-    if (!mats)
-        return;
-
-    mat4x4f aux = pop(mats);
+    
     //log_debug_matx4f(&aux, "MODEL BEFORE TRANSLATION:");
     mat4x4f translate_matrix = {
         .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  desp.x,
@@ -127,52 +123,51 @@ void translate_matrix_matstack(matrix_stack_t *mats, vec3f desp)
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
     //aux = mat4x4f_prod(translate_matrix,  aux);
-    aux = mat4x4f_prod(aux, translate_matrix);
+    mat = mat4x4f_prod(mat, translate_matrix);
     //log_debug_matx4f(&aux, "MODEL AFTER TRANSLATION:");
-    push(mats, aux);
+    return mat;
 }
 
 void translate_matrix(vec3f desp)
 {
-    translate_matrix_matstack(active_mat, desp);
-}
-
-void scale_matrix_matstack(matrix_stack_t *mats, vec3f sc)
-{
-    if (!mats)
+    if (!active_mat)
         return;
 
-    mat4x4f aux = pop(mats);
-    //log_debug_matx4f(&aux, "MODEL BEFORE SCALETION:");
+    mat4x4f aux = pop(active_mat);
+    aux = get_translated_matrix_mat4x4f(aux, desp);
+    push(active_mat, aux);
+}
+
+mat4x4f get_scaled_matrix_mat4x4f(mat4x4f mat, vec3f sc)
+{
     mat4x4f scale_matrix = {
         .a1 = sc.x,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  0.0f,
         .a2 = 0.0f,  .b2 = sc.y,  .c2 = 0.0f,   .d2 =  0.0f,
         .a3 = 0.0f,  .b3 = 0.0f,  .c3 = sc.z,   .d3 =  0.0f,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, scale_matrix);
-    //log_debug_matx4f(&aux, "MODEL AFTER SCALETION:");
-    push(mats, aux);
+    mat = mat4x4f_prod(mat, scale_matrix);
+    return mat;
 }
 
 void scale_matrix(vec3f sc)
 {
-    scale_matrix_matstack(active_mat, sc);
-}
-
-void rotate_matrix_matstack(matrix_stack_t *mats, axis3f_t rot_axis, float angle)
-{
-    if (!mats)
+    if (!active_mat)
         return;
 
+    mat4x4f aux = pop(active_mat);
+    aux = get_scaled_matrix_mat4x4f(aux, sc);
+    push(active_mat, aux);
+}
+
+mat4x4f get_rotated_matrix_mat4x4f(mat4x4f mat, axis3f_t rot_axis, float angle)
+{
     vec3f axis_pnt = rot_axis.pnt;
     vec3f axis_vec = rot_axis.vec;
 
     // If there is not a vector for reference, there is no rotation
     if (!length3f(axis_vec))
-        return;
-
-    mat4x4f aux = pop(mats);
+        return identity_matrix_4x4;
 
     // The axis has to be translated to the origin
     mat4x4f translation_matrix = {
@@ -181,7 +176,7 @@ void rotate_matrix_matstack(matrix_stack_t *mats, axis3f_t rot_axis, float angle
         .a3 = 0.0f,  .b3 = 0.0f,  .c3 = 1.0f,   .d3 =  -axis_pnt.z,
         .a4 = 0.0f,  .b4 = 0.0f,  .c4 = 0.0f,   .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, translation_matrix);
+    mat = mat4x4f_prod(mat, translation_matrix);
     // This matrix will be used to unmake the translation
     mat4x4f un_translation_matrix = {
         .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  axis_pnt.x,
@@ -214,7 +209,7 @@ void rotate_matrix_matstack(matrix_stack_t *mats, axis3f_t rot_axis, float angle
         .a3 = -sin(-lon),   .b3 = 0.0f,      .c3 = cos(-lon),    .d3 =  0.0f,
         .a4 = 0.0f,         .b4 = 0.0f,      .c4 = 0.0f,         .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, rotation_matrix_lon);
+    mat = mat4x4f_prod(mat, rotation_matrix_lon);
     mat4x4f un_rotation_matrix_lon = {
         .a1 = cos(lon),    .b1 = 0.0f,      .c1 = sin(lon),    .d1 =  0.0f,
         .a2 = 0.0f,        .b2 = 1.0f,      .c2 = 0.0f,        .d2 =  0.0f,
@@ -228,7 +223,7 @@ void rotate_matrix_matstack(matrix_stack_t *mats, axis3f_t rot_axis, float angle
         .a3 = 0.0f,        .b3 = sin(-lat),  .c3 = cos(-lat),  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,       .c4 = 0.0f,       .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, rotation_matrix_lat);
+    mat = mat4x4f_prod(mat, rotation_matrix_lat);
     mat4x4f un_rotation_matrix_lat = {
         .a1 = 1.0f,        .b1 = 0.0f,      .c1 = 0.0f,      .d1 =  0.0f,
         .a2 = 0.0f,        .b2 = cos(lat),  .c2 = -sin(lat), .d2 =  0.0f,
@@ -243,43 +238,43 @@ void rotate_matrix_matstack(matrix_stack_t *mats, axis3f_t rot_axis, float angle
         .a3 = 0.0f,        .b3 = 0.0f,         .c3 = 1.0f,  .d3 =  0.0f,
         .a4 = 0.0f,        .b4 = 0.0f,         .c4 = 0.0f,  .d4 =  1.0f
     };
-    aux = mat4x4f_prod(aux, rotation_matrix_around_z);
+    mat = mat4x4f_prod(mat, rotation_matrix_around_z);
 
     // The auxiliar transformations are unmade in reverse order
-    aux = mat4x4f_prod(aux, un_rotation_matrix_lat);
-    aux = mat4x4f_prod(aux, un_rotation_matrix_lon);
-    aux = mat4x4f_prod(aux, un_translation_matrix);
+    mat = mat4x4f_prod(mat, un_rotation_matrix_lat);
+    mat = mat4x4f_prod(mat, un_rotation_matrix_lon);
+    mat = mat4x4f_prod(mat, un_translation_matrix);
 
-    push(mats, aux);
+    return mat;
 }
 
 void rotate_matrix(axis3f_t rot_axis, float angle)
 {
-    rotate_matrix_matstack(active_mat, rot_axis, angle);
+    if (!active_mat)
+        return;
+
+    mat4x4f aux = pop(active_mat);
+    aux = get_rotated_matrix_mat4x4f(aux, rot_axis, angle);
+    push(active_mat, aux);
 }
 
-static inline vec3f get_position_matstack(matrix_stack_t *mats)
+static inline vec3f get_position_mat4x4f(mat4x4f mat)
 {
-    if (!mats)
-        return zero_vec3f;
-
-    mat4x4f aux_mat = peek(mats);
-    mat4x4f inv_mat = inverse_mat4x4f(aux_mat, false, false);
+    mat4x4f inv_mat = inverse_mat4x4f(mat, false, false);
     vec3f pos = { .x = inv_mat.d1, .y = inv_mat.d2, .z = inv_mat.d3 };
     return pos;
 }
 
 static inline vec3f get_position()
 {
-	return get_position_matstack(active_mat);
+    if (!active_mat)
+        return nan_vec3f;
+    mat4x4f aux = peek(active_mat);
+	return get_position_mat4x4f(aux);
 }
 
-void rotate_self_matstack(matrix_stack_t *mats, vec3f axis, float angle)
+mat4x4f get_rotated_self_mat4x4f(mat4x4f mat, vec3f axis, float angle)
 {
-    if (!mats)
-        return;
-
-    mat4x4f mat = peek(mats);
     //vec3f pos = get_position();
     vec3f pos = { .x = 0, .y = 0, .z = 0 };
     vec4f axis_ported = { .x = axis.x, .y = axis.y, .z = axis.z, .w = 0 };
@@ -292,12 +287,17 @@ void rotate_self_matstack(matrix_stack_t *mats, vec3f axis, float angle)
         .vec = axis,
         .pnt = pos
     };
-    rotate_matrix(rot_axis, angle);
+    return get_rotated_matrix_mat4x4f(mat, rot_axis, angle);
 }
 
 void rotate_self(vec3f axis, float angle)
 {
-	rotate_self_matstack(active_mat, axis, angle);
+    if (!active_mat)
+        return;
+
+    mat4x4f aux = pop(active_mat);
+	aux = get_rotated_self_mat4x4f(aux, axis, angle);
+    push(active_mat, aux);
 }
 
 bool push_matrix()
@@ -319,12 +319,8 @@ bool pop_matrix()
     return true;
 }
 
-void add_pitch_matstack(matrix_stack_t *mats, float angle)
+mat4x4f get_added_pitch_mat4x4f(mat4x4f mat, float angle)
 {
-    if (!mats)
-        return;
-
-    mat4x4f aux_mat = pop(mats);
     mat4x4f rotation_matrix_around_x = {
         .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
         .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
@@ -338,21 +334,22 @@ void add_pitch_matstack(matrix_stack_t *mats, float angle)
        The left-to-right order is because we use row-first matrices. In OpenGL we'd
        have to reverse the order of multiplication.
     */
-    aux_mat = mat4x4f_prod(rotation_matrix_around_x, aux_mat);
-    push(mats, aux_mat);
+    mat = mat4x4f_prod(rotation_matrix_around_x, mat);
+    return mat;
 }
 
 void add_pitch(float angle)
 {
-	add_pitch_matstack(active_mat, angle);
-}
-
-void add_yaw_matstack(matrix_stack_t *mats, float angle)
-{
-    if (!mats)
+    if (!active_mat)
         return;
 
-    mat4x4f aux_mat = pop(mats);
+    mat4x4f aux = pop(active_mat);
+	aux = get_added_pitch_mat4x4f(aux, angle);
+    push(active_mat, aux);
+}
+
+mat4x4f get_added_yaw_mat4x4f(mat4x4f mat, float angle)
+{
     mat4x4f rotation_matrix_around_y = {
         .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
         .a2 = 0.0f,         .b2 = 1.0f,   .c2 = 0.0f,         .d2 =  0.0f,
@@ -366,23 +363,24 @@ void add_yaw_matstack(matrix_stack_t *mats, float angle)
        The left-to-right order is because we use row-first matrices. In OpenGL we'd
        have to reverse the order of multiplication.
     */
-    aux_mat = mat4x4f_prod(rotation_matrix_around_y, aux_mat);
-    push(mats, aux_mat);
+    mat = mat4x4f_prod(rotation_matrix_around_y, mat);
+    return mat;
 }
 
 void add_yaw(float angle)
 {
-	add_yaw_matstack(active_mat, angle);
-}
-
-void add_yaw_world_axis_matstack(matrix_stack_t *mats, float angle)
-{
-    vec3f camera_pos = get_position();
-
-    if (!mats)
+    if (!active_mat)
         return;
 
-    mat4x4f aux_mat = pop(mats);
+    mat4x4f aux = pop(active_mat);
+    aux = get_added_yaw_mat4x4f(aux, angle);
+    push(active_mat, aux);
+}
+
+mat4x4f get_added_yaw_world_axis_mat4x4f(mat4x4f mat, float angle)
+{
+    vec3f camera_pos = get_position_mat4x4f(mat);
+
     mat4x4f rotation_matrix_around_y = {
         .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
         .a2 = 0.0f,         .b2 = 1.0f,   .c2 = 0.0f,         .d2 =  0.0f,
@@ -416,23 +414,24 @@ void add_yaw_world_axis_matstack(matrix_stack_t *mats, float angle)
        have to reverse the order of multiplication.
 */
 
-    aux_mat = mat4x4f_prod(aux_mat, translate_to_origin_mat);
-    aux_mat = mat4x4f_prod(aux_mat, rotation_matrix_around_y);
-    aux_mat = mat4x4f_prod(aux_mat, return_from_origin_mat);
-    push(mats, aux_mat);
+    mat = mat4x4f_prod(mat, translate_to_origin_mat);
+    mat = mat4x4f_prod(mat, rotation_matrix_around_y);
+    mat = mat4x4f_prod(mat, return_from_origin_mat);
+    return mat;
 }
 
 void add_yaw_world_axis(float angle)
 {
-	add_yaw_world_axis_matstack(active_mat, angle);
-}
-
-void add_roll_matstack(matrix_stack_t *mats, float angle)
-{
-    if (!mats)
+    if (!active_mat)
         return;
 
-    mat4x4f aux_mat = pop(mats);
+    mat4x4f aux = pop(active_mat);
+	aux = get_added_yaw_world_axis_mat4x4f(aux, angle);
+    push(active_mat, aux);
+}
+
+mat4x4f get_added_roll_mat4x4f(mat4x4f mat, float angle)
+{
     mat4x4f rotation_matrix_around_z = {
         .a1 = cos(angle),  .b1 = -sin(angle),  .c1 = 0.0f,  .d1 =  0.0f,
         .a2 = sin(angle),  .b2 = cos(angle) ,  .c2 = 0.0f,  .d2 =  0.0f,
@@ -446,21 +445,29 @@ void add_roll_matstack(matrix_stack_t *mats, float angle)
        The left-to-right order is because we use row-first matrices. In OpenGL we'd
        have to reverse the order of multiplication.
     */
-    aux_mat = mat4x4f_prod(rotation_matrix_around_z, aux_mat);
-    push(mats, aux_mat);
+    mat = mat4x4f_prod(rotation_matrix_around_z, mat);
+    return mat;
 }
 
 void add_roll(float angle)
 {
-	add_yaw_matstack(active_mat, angle);
+    if (!active_mat)
+        return;
+
+    mat4x4f aux = pop(active_mat);
+	aux = get_added_roll_mat4x4f(aux, angle);
+    push(active_mat, aux);
 }
 
-/* Convenience function that takes into account the View matrix Z coord
-   orientation, see notes on add_translation */
 void move_camera(float x, float y, float z)
 {
-    vec3f aux = { .x = x, .y = y, .z = z };
-    translate_matrix(aux);
+    if (!active_mat)
+        return;
+
+    mat4x4f mat = pop(active_mat);
+    vec3f desp = { .x = x, .y = y, .z = -z };
+    mat = get_translated_matrix_mat4x4f(mat, desp);
+    push(active_mat, mat);
 }
 
 #endif
