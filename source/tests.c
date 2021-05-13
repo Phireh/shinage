@@ -1,4 +1,10 @@
-#include "shinage.h"
+#include <stdio.h>
+
+#include "shinage_debug.h"
+#include "shinage_math.h"
+#include "shinage_stack_structures.h"
+#include "shinage_camera.h"
+
 
 #define GREEN_BOLD "\033[1;32m"
 #define RED_BOLD   "\033[1;31m"

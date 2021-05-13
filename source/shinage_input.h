@@ -167,12 +167,25 @@ static inline char *mod_key_str_prefix()
 
 static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
 {
-    if (modifier_keys_bitmask & ShiftMask)
+    /* TODO: Make a Windows version of these.
+       To avoid using X11 symbols we'll use the fixed
+       mask values as described by
+       https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html
+
+       ShiftMask: (1<<0)
+       ControlMask: (1<<2)
+       Mod1Mask: (1<<3)
+     */
+    #ifdef linux
+    if (modifier_keys_bitmask & (1 << 0))
         set_shift_key();
-    if (modifier_keys_bitmask & ControlMask)
+    if (modifier_keys_bitmask & (1 << 2))
         set_ctrl_key();
-    if (modifier_keys_bitmask & Mod1Mask) // Mod1 is, usually, the Alt key
+    if (modifier_keys_bitmask & (1 << 3)) // Mod1 is, usually, the Alt key
         set_alt_key();
+    #else
+    #error "Windows code WIP"
+    #endif
 }
 
 

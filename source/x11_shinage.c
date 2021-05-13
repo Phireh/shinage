@@ -1,4 +1,4 @@
-#include "shinage.h"
+#include "x11_shinage.h"
 
 int main(int argc, char *argv[])
 {

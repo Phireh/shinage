@@ -1,5 +1,5 @@
-#ifndef SHINAGE_H
-#define SHINAGE_H
+#ifndef X11_SHINAGE_H
+#define X11_SHINAGE_H
 
 /* CRT includes */
 #include <stdio.h>
@@ -34,11 +34,11 @@
 #include "shinage_input.h"
 #include "shinage_opengl_signatures.h"
 #include "shinage_shaders.h"
-#include "shinage_scene.h"
+//#include "shinage_scene.h"
 #include "shinage_utils.h"
 
 /* shinage_text also includes ft2build.h and FT_FREETYPE_H */
-#include "shinage_text.h"
+#include "x11_shinage_text.h"
 
 /* Types */
 typedef enum {

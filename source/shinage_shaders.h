@@ -1,6 +1,7 @@
 #ifndef SHINAGE_SHADERS_H
 #define SHINAGE_SHADERS_H
 
+/* TODO: put an #ifdef for Windows / Linux OpenGL locations if needed */
 #include <GL/glx.h>
 #include <GL/glext.h>
 #include "shinage_opengl_signatures.h"
