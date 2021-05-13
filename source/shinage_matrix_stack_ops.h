@@ -181,23 +181,6 @@ static inline vec3f get_position_mat4x4f(mat4x4f mat)
     return pos;
 }
 
-mat4x4f get_rotated_self_mat4x4f(mat4x4f mat, vec3f axis, float angle)
-{
-    //vec3f pos = get_position_mat4x4f(mat);
-    vec3f pos = { .x = 0, .y = 0, .z = 0 };
-    vec4f axis_ported = { .x = axis.x, .y = axis.y, .z = axis.z, .w = 0 };
-    axis_ported = mat4x4f_vec4f_prod(mat, axis_ported);
-    axis.x = axis_ported.x; axis.y = axis_ported.y; axis.z = axis_ported.z;
-
-    log_debug("Ported vec.: (%f, %f, %f)", axis.x, axis.y, axis.z);
-    log_debug("Pos. from matrix: (%f, %f, %f)", pos.x, pos.y, pos.z);
-    axis3f_t rot_axis = {
-        .vec = axis,
-        .pnt = pos
-    };
-    return get_rotated_matrix_mat4x4f(mat, rot_axis, angle);
-}
-
 mat4x4f get_added_pitch_mat4x4f(mat4x4f mat, float angle)
 {
     vec3f camera_pos = get_position_mat4x4f(mat);
@@ -357,6 +340,49 @@ void set_mat(matrix_t mat)
     }
 }
 
+mat4x4f get_added_yaw_world_axis_mat4x4f(mat4x4f mat, float angle)
+{
+    vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
+
+    mat4x4f rotation_matrix_around_y = {
+        .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
+        .a2 = 0.0f,         .b2 = 1.0f,   .c2 = 0.0f,         .d2 =  0.0f,
+        .a3 = -sin(angle),  .b3 = 0.0f,   .c3 = cos(angle),   .d3 =  0.0f,
+        .a4 = 0.0f,         .b4 = 0.0f,   .c4 = 0.0f,         .d4 =  1.0f
+    };
+
+    /* Translate the camera to 0,0,0 so we can rotate around the world Y axis */
+    mat4x4f translate_to_origin_mat = {
+        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = camera_pos.x,
+        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = camera_pos.y,
+        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = camera_pos.z,
+        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
+    };
+
+    mat4x4f return_from_origin_mat = {
+        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = -camera_pos.x,
+        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = -camera_pos.y,
+        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = -camera_pos.z,
+        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
+    };
+
+
+    /* NOTE: The multiplication order is important. The transformations to the world happen
+       in left-to-right order as we multiply matrices. We want to take the View matrix
+       already created and apply three new transformations to it:
+
+       NewMat = ViewMat * ToOrigin * Rotate * BackFromOrigin
+
+       The left-to-right order is because we use row-first matrices. In OpenGL we'd
+       have to reverse the order of multiplication.
+    */
+
+    mat = mat4x4f_prod(mat, translate_to_origin_mat);
+    mat = mat4x4f_prod(mat, rotation_matrix_around_y);
+    mat = mat4x4f_prod(mat, return_from_origin_mat);
+    return mat;
+}
+
 void look_at(vec3f e, vec3f poi, vec3f up)
 {
     if (!active_mat)
@@ -413,16 +439,6 @@ static inline vec3f get_position()
         return nan_vec3f;
     mat4x4f aux = peek(active_mat);
     return get_position_inverted_space_mat4x4f(aux);
-}
-
-void rotate_self(vec3f axis, float angle)
-{
-    if (!active_mat)
-        return;
-
-    mat4x4f aux = pop(active_mat);
-    aux = get_rotated_self_mat4x4f(aux, axis, angle);
-    push(active_mat, aux);
 }
 
 void add_pitch(float angle)
@@ -493,49 +509,6 @@ bool pop_matrix()
 
     pop(active_mat);
     return true;
-}
-
-mat4x4f get_added_yaw_world_axis_mat4x4f(mat4x4f mat, float angle)
-{
-    vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
-
-    mat4x4f rotation_matrix_around_y = {
-        .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
-        .a2 = 0.0f,         .b2 = 1.0f,   .c2 = 0.0f,         .d2 =  0.0f,
-        .a3 = -sin(angle),  .b3 = 0.0f,   .c3 = cos(angle),   .d3 =  0.0f,
-        .a4 = 0.0f,         .b4 = 0.0f,   .c4 = 0.0f,         .d4 =  1.0f
-    };
-
-    /* Translate the camera to 0,0,0 so we can rotate around the world Y axis */
-    mat4x4f translate_to_origin_mat = {
-        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = camera_pos.x,
-        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = camera_pos.y,
-        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = camera_pos.z,
-        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
-    };
-
-    mat4x4f return_from_origin_mat = {
-        .a1 = 1, .b1 = 0, .c1 = 0, .d1 = -camera_pos.x,
-        .a2 = 0, .b2 = 1, .c2 = 0, .d2 = -camera_pos.y,
-        .a3 = 0, .b3 = 0, .c3 = 1, .d3 = -camera_pos.z,
-        .a4 = 0, .b4 = 0, .c4 = 0, .d4 = 1
-    };
-
-
-    /* NOTE: The multiplication order is important. The transformations to the world happen
-       in left-to-right order as we multiply matrices. We want to take the View matrix
-       already created and apply three new transformations to it:
-
-       NewMat = ViewMat * ToOrigin * Rotate * BackFromOrigin
-
-       The left-to-right order is because we use row-first matrices. In OpenGL we'd
-       have to reverse the order of multiplication.
-    */
-
-    mat = mat4x4f_prod(mat, translate_to_origin_mat);
-    mat = mat4x4f_prod(mat, rotation_matrix_around_y);
-    mat = mat4x4f_prod(mat, return_from_origin_mat);
-    return mat;
 }
 
 #endif
