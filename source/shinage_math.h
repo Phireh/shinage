@@ -355,7 +355,7 @@ static inline mat4x4f summat4x4f(mat4x4f m1, mat4x4f m2, bool subtraction)
 
 static inline void log_debug_matx2f(mat2x2f *m, char* txt)
 {
-    log_debug("%s\n %.3f %.3f\n %.3f %.3f\n",
+    log_debug("%s\n %.3f %.3f\n %.3f %.3f",
               txt,
               m->a1, m->b1,
               m->a2, m->b2);
@@ -363,7 +363,7 @@ static inline void log_debug_matx2f(mat2x2f *m, char* txt)
 
 static inline void log_debug_matx3f(mat3x3f *m, char* txt)
 {
-    log_debug("%s\n %.3f %.3f %.3f\n %.3f %.3f %.3f\n %.3f %.3f %.3f\n",
+    log_debug("%s\n %.3f %.3f %.3f\n %.3f %.3f %.3f\n %.3f %.3f %.3f",
               txt,
               m->a1, m->b1, m->c1,
               m->a2, m->b2, m->c2,
@@ -372,7 +372,7 @@ static inline void log_debug_matx3f(mat3x3f *m, char* txt)
 
 static inline void log_debug_matx4f(mat4x4f *m, char* txt)
 {
-    log_debug("%s\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n",
+    log_debug("%s\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f\n %.3f %.3f %.3f %.3f",
               txt,
               m->a1, m->b1, m->c1, m->d1,
               m->a2, m->b2, m->c2, m->d2,

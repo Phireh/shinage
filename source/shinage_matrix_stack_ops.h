@@ -177,13 +177,19 @@ static inline vec3f get_position_inverted_space_mat4x4f(mat4x4f mat)
 
 static inline vec3f get_position_mat4x4f(mat4x4f mat)
 {
-    vec3f pos = { .x = mat.d1, .y = mat.d2, .z = mat.d3 };
+    vec3f pos = get_position_inverted_space_mat4x4f(mat);
+    vec4f transported_pos = { .x = pos.x, .y = pos.y, .z = pos.z, .w = 1 };
+    //log_debug("From: (%f, %f, %f)", transported_pos.x, transported_pos.y, transported_pos.z);
+    //log_debug_matx4f(&mat, "Via:");
+    transported_pos = mat4x4f_vec4f_prod(mat, transported_pos);
+    //log_debug("To: (%f, %f, %f)", transported_pos.x, transported_pos.y, transported_pos.z);
+    pos.x = transported_pos.x; pos.y = transported_pos.y; pos.z = transported_pos.z;
     return pos;
 }
 
 mat4x4f get_added_pitch_mat4x4f(mat4x4f mat, float angle)
 {
-    vec3f camera_pos = get_position_mat4x4f(mat);
+    vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
   
     mat4x4f rotation_matrix_around_x = {
         .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
@@ -221,7 +227,7 @@ mat4x4f get_added_pitch_mat4x4f(mat4x4f mat, float angle)
 
 mat4x4f get_added_yaw_mat4x4f(mat4x4f mat, float angle)
 {
-    vec3f camera_pos = get_position_mat4x4f(mat);
+    vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
 
     mat4x4f rotation_matrix_around_y = {
         .a1 = cos(angle),   .b1 = 0.0f,   .c1 = sin(angle),   .d1 =  0.0f,
@@ -264,7 +270,7 @@ mat4x4f get_added_yaw_mat4x4f(mat4x4f mat, float angle)
 
 mat4x4f get_added_roll_mat4x4f(mat4x4f mat, float angle)
 {
-    vec3f camera_pos = get_position_mat4x4f(mat);
+    vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
  
     mat4x4f rotation_matrix_around_z = {
         .a1 = cos(angle),  .b1 = -sin(angle),  .c1 = 0.0f,  .d1 =  0.0f,
