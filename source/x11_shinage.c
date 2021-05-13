@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
             printf("SHINAGE version %s", version);
             return 0;
         }
-    }
+    } 
 
     /* X11 Window creation */
     if (!(x11_display = XOpenDisplay(NULL)))

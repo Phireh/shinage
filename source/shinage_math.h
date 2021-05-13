@@ -39,6 +39,11 @@ typedef union {
         float y;
         float z;
     };
+    struct {
+        float pitch;
+        float yaw;
+        float roll;
+    };
     // Access as raw values
     float v[3];
 } vec3f;
