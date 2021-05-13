@@ -1361,7 +1361,7 @@ int set_vsync(bool new_state)
         return 1;
     }
     return 0; /* If we get here it's mostly an error */
-}
+} 
 
 void draw_fps_counter()
 {

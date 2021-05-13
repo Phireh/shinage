@@ -34,6 +34,7 @@
 #include "shinage_input.h"
 #include "shinage_opengl_signatures.h"
 #include "shinage_shaders.h"
+#include "shinage_scene.h"
 //#include "shinage_scene.h"
 #include "shinage_utils.h"
 
