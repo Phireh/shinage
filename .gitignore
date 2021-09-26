@@ -5,3 +5,12 @@ tests
 # tag files
 tags
 TAGS
+
+# Emacs temp files
+\#*\#
+.\#*
+
+# Vim temp /swap files
+*~
+.*.swp
+.*.swo
