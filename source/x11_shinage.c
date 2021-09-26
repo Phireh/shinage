@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
             printf("SHINAGE version %s", version);
             return 0;
         }
-    } 
+    }
 
     /* X11 Window creation */
     if (!(x11_display = XOpenDisplay(NULL)))
@@ -1107,8 +1107,8 @@ void test_cube_logic(player_input_t *input, entity_t *e)
     bool f2 = is_just_pressed(input->f2);
     int  mouse_x = input->cursor_x_delta;
     int  mouse_y = input->cursor_y_delta;
-    bool right_click   = is_just_pressed(input->mouse_left_click);
-    bool left_click   = is_just_pressed(input->mouse_right_click);
+    bool left_click   = is_just_pressed(input->mouse_left_click);
+    bool right_click   = is_just_pressed(input->mouse_right_click);
     bool space = is_just_pressed(input->space);
     float rps = M_PI / 2;
     float angle = rps * get_delta_time();
@@ -1361,7 +1361,7 @@ int set_vsync(bool new_state)
         return 1;
     }
     return 0; /* If we get here it's mostly an error */
-} 
+}
 
 void draw_fps_counter()
 {
