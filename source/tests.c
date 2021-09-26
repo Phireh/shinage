@@ -20,8 +20,6 @@
 
 #define log_summary(str, ...) fprintf(stderr, "[" PINK_BOLD "SUMMARY" RESET_TEXT "] (%s:%d): " str "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
-#define epsilon 0.0000001f
-
 
 int mat4_eq_debug(mat4x4f m1, mat4x4f m2)
 {
