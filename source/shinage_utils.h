@@ -3,11 +3,16 @@
 
 #include "shinage_debug.h"
 
+/* Reads file at input pathname and returns a char * to a heap-allocated buf with the file's contents. */
 char* load_file(char *pathname)
 {
 	FILE *text_file = fopen(pathname, "r");
 	if (!text_file)
+    {
 		log_err("ERROR: Fail trying to read file at %s", pathname);
+        return NULL;
+    }
+
     fseek(text_file, 0, SEEK_END);
     long file_size = ftell(text_file);
     fseek(text_file, 0, SEEK_SET);  /* same as rewind(f); */

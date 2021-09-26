@@ -4,11 +4,14 @@
 /* TODO: put an #ifdef for Windows / Linux OpenGL locations if needed */
 #include <GL/glx.h>
 #include <GL/glext.h>
+#include <stdlib.h>
 #include "shinage_opengl_signatures.h"
 #include "shinage_debug.h"
 #include "shinage_utils.h"
 
+/* TODO: Add support for compute shaders, etc. in this file's functions */
 
+/* Returns an OpenGL numeric ID to a compiled (but unlinked) shader program. */
 unsigned int build_shader(char *source, int type)
 {
     char infoLog[512];
@@ -27,13 +30,17 @@ unsigned int build_shader(char *source, int type)
     return shader;
 }
 
+/* Returns an OpenGL numeric ID to a compiled (but unlinked) shader program. */
 unsigned int build_shader_from_file(char *pathname, int type)
 {
     char *file_contents = load_file(pathname);
     unsigned int shader = build_shader(file_contents, type);
+    // Cleanup of unneeed buffer
+    free(file_contents);
     return shader;
 }
 
+/* Takes two pathnames and builds a complete OpenGL program from them, then returns a the ID of said program */
 unsigned int make_gl_program(char *pathname_vertex, char *pathname_fragment)
 {
     char infoLog[512];
@@ -48,13 +55,15 @@ unsigned int make_gl_program(char *pathname_vertex, char *pathname_fragment)
     // print linking errors if any
     int success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success)         // TODO: Maybe better error handling?
+    if (!success)
     {
+        // TODO: Maybe better error handling?
         glGetProgramInfoLog(program, 512, NULL, infoLog);
         log_err("Error: shader linking failed: %s\n", infoLog);
     }
     else
     {
+        // Cleanup of unneeded structures
         glDeleteShader(vertex_shader);
         glDeleteShader(fragment_shader);
     }
