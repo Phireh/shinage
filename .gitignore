@@ -2,9 +2,14 @@
 shinage
 tests
 
-# tag files
+# tag files / folders
 tags
 TAGS
+GTAGS
+GPATH
+GRTAGS
+gtags
+
 
 # Emacs temp files
 \#*\#
