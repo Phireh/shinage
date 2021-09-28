@@ -8,11 +8,13 @@ COMMON_SOURCES=$(SOURCE)/shinage_common.h $(SOURCE)/shinage_debug.h $(SOURCE)/sh
 PLATFORM_SOURCES=$(SOURCE)/x11_shinage.c $(SOURCE)/x11_shinage.h $(COMMON_SOURCES)
 GAME_SOURCES=$(SOURCE)/shinage_game.c $(COMMON_SOURCES)
 
-shinage_game.so: $(GAME_SOURCES)
-	$(CC) $(CFLAGS) -fPIC -shared $(INCLUDES) $(SOURCE)/shinage_game.c $(LIBS) -o shinage_game.so
+all: shinage shinage_game.so
 
 shinage: $(PLATFORM_SOURCES)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCE)/x11_shinage.c $(LIBS) -o shinage
+
+shinage_game.so: $(GAME_SOURCES)
+	$(CC) $(CFLAGS) -fPIC -shared $(INCLUDES) $(SOURCE)/shinage_game.c $(LIBS) -o shinage_game.so
 
 tests: $(SOURCE)/tests.c $(SOURCE)/shinage_math.h $(SOURCE)/shinage_camera.h $(SOURCE)/shinage_stack_structures.h
 	$(CC) $(CFLAGS) $(SOURCE)/tests.c $(LIBS) -o tests

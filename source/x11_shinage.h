@@ -10,6 +10,9 @@
 
 /* Dynamic code injection includes */
 #include <dlfcn.h>
+#include <sys/inotify.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 /* X11 server includes:
    requires linking with -lX11 */
@@ -56,6 +59,11 @@ GLXContext glx_context;
 char *simple_color_vertex_shader_path = "./shaders/simple_color.vert";
 char *simple_color_fragment_shader_path = "./shaders/simple_color.frag";
 unsigned int simple_color_program = 0;
+
+/* Linux related globals */
+char inotify_buffer[sizeof(struct inotify_event) + NAME_MAX + 1];
+int inotify_fd;
+int inotify_wd;
 
 /* Convenience functions for checking current window dimentions.
    Currently only used inside shinage_text */
@@ -124,6 +132,68 @@ int set_pointer_state(player_input_t *input, pointer_state_t new_state)
     }
 
     return 0;
+}
+
+int load_game_code(game_code_t *game_code)
+{
+    static void *library_handle = NULL;
+    if (library_handle)
+        dlclose(library_handle);
+
+    library_handle = dlopen("./shinage_game.so", RTLD_NOW);
+    void *address = dlsym(library_handle, "game_update");
+    if (!address)
+    {
+        fprintf(stderr, "Error loading game code: %s\n", dlerror());
+        return 0;
+    }
+    game_code->game_update = address;
+    address = dlsym(library_handle, "game_render");
+    if (!address)
+    {
+        fprintf(stderr, "Error loading game code: %s\n", dlerror());
+        return 0;
+    }
+    game_code->game_render = address;
+
+    return 1;
+}
+
+/* Reloads the dynamic part of game code if shinage_game.so was edited */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+int reload_game_code(game_code_t *game_code)
+{
+#pragma GCC diagnostic pop
+    ssize_t ret;
+    while ((ret = read(inotify_fd, inotify_buffer, sizeof(inotify_buffer))) != -1)
+    {
+        log_info("File %s has changed, reloading game code", ((struct inotify_event*)inotify_buffer)->name);
+        struct inotify_event *event = (struct inotify_event*) inotify_buffer;
+        if (event->mask & IN_CLOSE_WRITE && !strcmp(event->name, "shinage_game.so"))
+        {
+            load_game_code(game_code);
+        }
+    }
+    if (ret == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
+    {
+        // TODO: Error handling
+        log_err("Error reading inotify fd");
+#define CASE_STATEMENT(x) case x: { log_err(#x); } break
+        switch (errno)
+        {
+            CASE_STATEMENT(EBADF);
+            CASE_STATEMENT(EFAULT);
+            CASE_STATEMENT(EINTR);
+            CASE_STATEMENT(EINVAL);
+            CASE_STATEMENT(EIO);
+            CASE_STATEMENT(EISDIR);
+        }
+    }
+#undef CASE_STATEMENT
+
+    // Return 1 on code reload
+    return ret > 0 ? 1 : 0;
 }
 
 /* Functions */

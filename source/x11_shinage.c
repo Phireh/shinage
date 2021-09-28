@@ -231,19 +231,12 @@ int main(int argc, char *argv[])
 
     /* Game code initialization */
     game_code_t game_code = {0};
-    void *library_handle = dlopen("./shinage_game.so", RTLD_NOW);
-    void *address = dlsym(library_handle, "game_update");
-    if (!address)
-    {
-        fprintf(stderr, "Error loading game code: %s\n", dlerror());
-    }
-    game_code.game_update = address;
-    address = dlsym(library_handle, "game_render");
-    if (!address)
-    {
-        fprintf(stderr, "Error loading game code: %s\n", dlerror());
-    }
-    game_code.game_render = address;
+    load_game_code(&game_code);
+
+    /* Register inotify watch */
+    inotify_fd = inotify_init();
+    fcntl(inotify_fd, F_SETFL, O_NONBLOCK);
+    inotify_wd = inotify_add_watch(inotify_fd, "./", IN_CLOSE_WRITE);
 
     /* Main loop */
     double curr_frame_start_time = get_current_time();
@@ -304,6 +297,9 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+
+        reload_game_code(&game_code);
 
         /* NOTE: The basic input handling loop is as follows:
            We mantain 2 different structures: the last frame, and current frame inputs.
@@ -651,6 +647,10 @@ int main(int argc, char *argv[])
                 XGetWindowAttributes(x11_display, x11_window, &x11_window_attr);
                 x11_window_width = x11_window_attr.width;
                 x11_window_height = x11_window_attr.height;
+                // Record the new window dimentions to the game layer
+                game_state.window_width = x11_window_width;
+                game_state.window_height = x11_window_height;
+
                 /* Update glVierport coordinates to properly adjust to the new window size */
                 glViewport(0, 0, x11_window_width, x11_window_height);
                 //log_debug("Window resized; Window width %d; Window height %d", x11_window_attr.width, x11_window_attr.height);
