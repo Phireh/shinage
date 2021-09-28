@@ -2,6 +2,7 @@
 #define SHINAGE_DEBUG_H
 
 #include <string.h>
+#include <stdio.h>
 
 /* Convenience macros */
 // NOTE: ##__VA_ARGS__ is a compiler extension and may not be portable. Maybe check for compiler defs here.

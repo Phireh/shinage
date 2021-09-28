@@ -1,6 +1,7 @@
 # Output binaries
 shinage
 tests
+shinage_game.so
 
 # tag files / folders
 tags

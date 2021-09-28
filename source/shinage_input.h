@@ -1,6 +1,8 @@
 #ifndef SHINAGE_INPUT_H
 #define SHINAGE_INPUT_H
 
+#include <stdint.h>
+
 /* Input handling macros */
 #define CTRL_MOD_KEY (1 << 0)
 #define SHIFT_MOD_KEY (1 << 1)
@@ -176,7 +178,7 @@ static inline void dispatch_mod_keys(unsigned int modifier_keys_bitmask)
        ControlMask: (1<<2)
        Mod1Mask: (1<<3)
      */
-    #ifdef linux
+    #ifdef __linux__
     if (modifier_keys_bitmask & (1 << 0))
         set_shift_key();
     if (modifier_keys_bitmask & (1 << 2))

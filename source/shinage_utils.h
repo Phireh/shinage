@@ -22,5 +22,4 @@ char* load_file(char *pathname)
     fclose (text_file);
     return file_contents;
 }
-
 #endif

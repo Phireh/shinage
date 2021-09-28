@@ -26,10 +26,6 @@ FT_Face default_face;
 
 character_t charmap[128];
 
-/* Function signatures */
-int get_window_width(void);
-int get_window_height(void);
-
 /* Loads a Freetype library handle. Returns 0 on success, 1 on error.
    NOTE: For our purposes, this should only be called once. It is possible to
    have multiple instances of Freetype with their own fonts, but we don't need to.
@@ -117,7 +113,7 @@ int load_charmap(FT_Face face)
     return charcount;
 }
 
-void render_text(char *text, float x, float y, float scale, vec3f color)
+void render_text(char *text, float x, float y, int window_width, int window_height, float scale, vec3f color)
 {
     /* Enable blending for text rendering */
     glEnable(GL_CULL_FACE);
@@ -127,42 +123,42 @@ void render_text(char *text, float x, float y, float scale, vec3f color)
 
     if (!font_program)
         font_program = make_gl_program(font_vertex_shader_path, font_fragment_shader_path);
-    glUseProgram(font_program);
+    openGL.glUseProgram(font_program);
 
     static int pmatrix_uniform_pos = -1;
     if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(font_program, "projMatrix");
+        pmatrix_uniform_pos = openGL.glGetUniformLocation(font_program, "projMatrix");
 
     mat4x4f pmatrix;
-    pmatrix = orthogonal_proj_matrix(0.0f, get_window_width(), 0.0f, get_window_height());
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
+    pmatrix = orthogonal_proj_matrix(0.0f, window_width, 0.0f, window_height);
+    openGL.glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
 
     static int color_uniform_pos = -1;
     if (color_uniform_pos == -1)
-        color_uniform_pos = glGetUniformLocation(font_program, "textColor");
+        color_uniform_pos = openGL.glGetUniformLocation(font_program, "textColor");
 
-    glUniform3f(color_uniform_pos, color.x, color.y, color.z);
+    openGL.glUniform3f(color_uniform_pos, color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
 
     static unsigned int vao = 0;
     if (!vao)
-        glGenVertexArrays(1, &vao);
+        openGL.glGenVertexArrays(1, &vao);
 
     static unsigned int vbo = 0;
     if (!vbo)
-        glGenBuffers(1, &vbo);
+        openGL.glGenBuffers(1, &vbo);
 
     static bool initialized = false;
     if (!initialized)
     {
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+        openGL.glBindVertexArray(vao);
+        openGL.glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+        openGL.glEnableVertexAttribArray(0);
+        openGL.glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
         initialized = true;
     }
-    glBindVertexArray(vao);
+    openGL.glBindVertexArray(vao);
 
 
     char c;
@@ -192,16 +188,16 @@ void render_text(char *text, float x, float y, float scale, vec3f color)
         /* Render glyph texture over quad */
         glBindTexture(GL_TEXTURE_2D, ch.tex);
         /* Update content of VBO memory */
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
+        openGL.glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        openGL.glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        openGL.glBindBuffer(GL_ARRAY_BUFFER, 0);
         // render quad
         glDrawArrays(GL_TRIANGLES, 0, 6);
         // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
         x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
     }
-    glBindVertexArray(0);
+    openGL.glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glDisable(GL_CULL_FACE);

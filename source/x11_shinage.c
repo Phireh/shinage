@@ -203,6 +203,48 @@ int main(int argc, char *argv[])
     }
 
 
+
+    /* Game state initialization */
+    /* NOTE: Still on the process of moving all state inside game_state.
+     For now we're probably end up using pointers to his members. */
+    game_state_t game_state = {0};
+    game_state.loop_state = RUNNING;
+    game_state.window_width = x11_window_width;
+    game_state.window_height = x11_window_height;
+    game_state.vsync = true;
+    game_state.curr_frame_input = curr_frame_input;
+    game_state.last_frame_input = last_frame_input;
+
+
+    // Shaders init
+    build_programs(&game_state);
+
+    update_global_vars(&game_state);
+    build_matrices();
+    set_mat(PROJECTION, &game_state);
+    float ar = (float)x11_window_width / (float)x11_window_height;
+    perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
+    set_mat(VIEW, &game_state);
+    vec3f eye = { .x = 0, .y = 3, .z = -3 };
+    vec3f poi = { .x = 0, .y = 0, .z = 0 };
+    look_at(eye, poi, up_vector);
+
+    /* Game code initialization */
+    game_code_t game_code = {0};
+    void *library_handle = dlopen("./shinage_game.so", RTLD_NOW);
+    void *address = dlsym(library_handle, "game_update");
+    if (!address)
+    {
+        fprintf(stderr, "Error loading game code: %s\n", dlerror());
+    }
+    game_code.game_update = address;
+    address = dlsym(library_handle, "game_render");
+    if (!address)
+    {
+        fprintf(stderr, "Error loading game code: %s\n", dlerror());
+    }
+    game_code.game_render = address;
+
     /* Main loop */
     double curr_frame_start_time = get_current_time();
     double last_frame_start_time = 0.0;
@@ -211,11 +253,12 @@ int main(int argc, char *argv[])
 
     XEvent x11_event;
     KeySym keysym = 0;
-    main_loop_state_t main_loop_state = RUNNING;
-    while (main_loop_state == RUNNING)
+
+    game_state.loop_state = RUNNING;
+    while (game_state.loop_state == RUNNING)
     {
         /* We only need to sleep if VSync is off and the curr frame is not the first one */
-        if (!vsync && framecount)
+        if (!game_state.vsync && game_state.framecount)
         {
             /* TODO: Include controls for upping the framerate target so we can test time-independence of logic code */
             last_frame_start_time = curr_frame_start_time;
@@ -286,10 +329,6 @@ int main(int argc, char *argv[])
         consume_first_presses(player1_input);
 
         /* Event handling */
-
-
-
-
         while(XPending(x11_display))
         {
             XNextEvent(x11_display, &x11_event);
@@ -313,7 +352,7 @@ int main(int argc, char *argv[])
                 switch (keysym)
                 {
                 case XK_Escape:
-                    main_loop_state = FINISHED;
+                    game_state.loop_state = FINISHED;
                     break;
 
                 case XK_Shift_L:
@@ -602,7 +641,7 @@ int main(int argc, char *argv[])
                 /* Petition to close window by the window manager. See Xlib's ICCCM docs */
                 if (x11_event.xclient.data.l[0] == (long int)wmDeleteMessage)
                 {
-                    main_loop_state = FINISHED;
+                    game_state.loop_state = FINISHED;
                     //log_debug("Closing window by window manager's request");
                 }
                 break;
@@ -649,7 +688,14 @@ int main(int argc, char *argv[])
         player1_input->shift = shift_key_is_set();
 
         /* Logic */
-        test_cube_logic(player1_input, &test_pyramid);
+        //test_cube_logic(player1_input, &test_pyramid);
+        game_code.game_update(&game_state);
+
+        /* Check for pointer grabbing changes */
+        if (player1_input->pointer_state != player1_last_input->pointer_state)
+        {
+            set_pointer_state(player1_input, player1_input->pointer_state);
+        }
 
         /* Rendering */
 
@@ -659,39 +705,19 @@ int main(int argc, char *argv[])
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Shaders init
-        static bool programs_init = false;
-        if (!programs_init)
-        {
-            build_programs();
-            programs_init = true;
-        }
 
-        static bool init_mats = false;
-        if (!init_mats)
-        {
-            build_matrices();
-            set_mat(PROJECTION);
-            init_mats = true;
-            float ar = (float)x11_window_width / (float)x11_window_height;
-            perspective_camera(M_PI / 2, ar, 0.1f, 100.0f);
-            set_mat(VIEW);
-            vec3f eye = { .x = 0, .y = 3, .z = -3 };
-            vec3f poi = { .x = 0, .y = 0, .z = 0 };
-            look_at(eye, poi, up_vector);
-        }
 
         //draw_bouncing_cube_scene();
-        draw_static_cubes_scene(8);
+        //draw_static_cubes_scene(8);
 
+        //draw_fps_counter();
 
-
-        draw_fps_counter();
+        game_code.game_render(&game_state);
 
 
         glXSwapBuffers(x11_display, x11_window);
 
-        ++framecount;
+        ++game_state.framecount;
     }
 
     /* Cleanup */
@@ -734,553 +760,9 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
     return 0;
 }
 
-void build_programs()
+void build_programs(game_state_t *state)
 {
-    simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
-}
-
-void draw_gl_pyramid(float *colours, unsigned int program)
-{
-    float vertices[] = {
-       0.0f,   0.43f,   0.0f,
-      -0.5f,  -0.43f,  -0.5f,
-       0.5f,  -0.43f,  -0.5f,
-       0.0f,  -0.43f,   0.5f
-    };
-
-    uint num_indices = 12;
-    uint indices[] =
-      {
-        3,1,2, 0,1,2, 0,3,1, 0,2,3
-      };
-
-    glUseProgram(program);
-
-    static int mmatrix_uniform_pos = -1;
-    if (mmatrix_uniform_pos == -1)
-        mmatrix_uniform_pos = glGetUniformLocation(program, "modelMatrix");
-
-    static int vmatrix_uniform_pos = -1;
-    if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(program, "viewMatrix");
-
-    static int pmatrix_uniform_pos = -1;
-    if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(program, "projMatrix");
-
-
-    mat4x4f mmatrix = peek(mats.model);
-    mat4x4f vmatrix = peek(mats.view);
-    mat4x4f pmatrix = peek(mats.projection);
-
-    glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
-    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_TRUE, vmatrix.v);
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
-
-    static unsigned int vao = 0;
-    if (!vao)
-        glGenVertexArrays(1, &vao);
-
-    glBindVertexArray(vao);
-
-    static unsigned int position_bo = 0;
-    if (!position_bo)
-        glGenBuffers(1, &position_bo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, position_bo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);
-
-    static unsigned int colour_bo = 0;
-    if (!colour_bo)
-        glGenBuffers(1, &colour_bo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
-    glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), colours, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(1);
-
-    static unsigned int element_bo = 0;
-    if (!element_bo)
-        glGenBuffers(1, &element_bo);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
-
-    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
-}
-
-bool show_cpu_calculated_matrix;
-
-void draw_gl_cube(float *colours, unsigned int program)
-{
-    float vertices[] = {
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f,  0.5f,
-    };
-
-    uint num_indices = 36;
-    uint indices[] = {
-        0,1,3, 1,2,3, 1,5,2, 5,6,2, 4,5,0, 5,1,0,
-        3,2,7, 2,6,7, 4,0,7, 0,3,7, 5,4,6, 4,7,6
-    };
-
-    glUseProgram(program);
-
-    static int mmatrix_uniform_pos = -1;
-    if (mmatrix_uniform_pos == -1)
-        mmatrix_uniform_pos = glGetUniformLocation(program, "modelMatrix");
-
-    static int vmatrix_uniform_pos = -1;
-    if (vmatrix_uniform_pos == -1)
-        vmatrix_uniform_pos = glGetUniformLocation(program, "viewMatrix");
-
-    static int pmatrix_uniform_pos = -1;
-    if (pmatrix_uniform_pos == -1)
-        pmatrix_uniform_pos = glGetUniformLocation(program, "projMatrix");
-
-
-    mat4x4f mmatrix = peek(mats.model);
-    mat4x4f vmatrix = peek(mats.view);
-    mat4x4f pmatrix = peek(mats.projection);
-
-    glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
-    glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_TRUE, vmatrix.v);
-    glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
-
-    static unsigned int vao = 0;
-    if (!vao)
-        glGenVertexArrays(1, &vao);
-
-    glBindVertexArray(vao);
-
-    static unsigned int position_bo = 0;
-    if (!position_bo)
-        glGenBuffers(1, &position_bo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, position_bo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);
-
-    static unsigned int colour_bo = 0;
-    if (!colour_bo)
-        glGenBuffers(1, &colour_bo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, colour_bo);
-    glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), colours, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(1);
-
-    static unsigned int element_bo = 0;
-    if (!element_bo)
-        glGenBuffers(1, &element_bo);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
-
-    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, (void*)0);
-
-    if (show_cpu_calculated_matrix)
-    {
-        log_debug_cpu_computed_vertex_positions(vertices, 8, 3);
-        show_cpu_calculated_matrix = false;
-    }
-}
-
-void draw_static_cubes_scene(uint segments)
-{
-    float colours[9][24] = {
-        {0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0},  // Black
-        {0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1},  // Blue
-        {0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0},  // Green
-        {0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1, 0,1,1},  // Cyan
-        {1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0},  // Red
-        {1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1},  // Magenta
-        {1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0},  // Yellow
-        {1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1},  // White
-        {0,0,0, 0,0,1, 0,1,0, 0,1,1, 1,0,0, 1,0,1, 1,1,0, 1,1,1}   // Rainbow
-    };
-
-    set_mat(MODEL);
-    push_matrix();
-    // The center of the scen will be (0 , 0, -1)
-    vec3f trans_the_origin = { .x = 0, .y = 0, .z = -1 };
-    translate_matrix(trans_the_origin);
-    vec3f scale = { .x = 0.1f, .y = 0.1f, .z = 0.1f };
-    scale_matrix(scale);
-    draw_gl_pyramid(colours[8], simple_color_program); // The center
-    scale.x = 10; scale.y = 10; scale.z = 10;
-    scale_matrix(scale);
-
-    axis3f_t rot_axis = {
-        .vec = { .x = 0, .y = 0, .z = 1 },
-        .pnt = { .x = 0, .y = 0, .z = -1 }
-    };
-    float rot_angle = 2 * M_PI / segments;
-    vec3f trans_from_origin = { .x = 0, .y = 2, .z = 0 };
-    for (uint i = 0; i < segments; i++)
-    {
-        push_matrix();
-        translate_matrix(trans_from_origin);
-        vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
-        scale_matrix(scale);
-        draw_gl_cube(colours[1], simple_color_program);
-        pop_matrix();
-        rotate_matrix(rot_axis, rot_angle);
-    }
-
-    rot_axis.vec.y = 1; rot_axis.vec.z = 0;
-    trans_from_origin.y = 0; trans_from_origin.x = 2.5f;
-    for (uint i = 0; i < segments; i++)
-    {
-        push_matrix();
-        translate_matrix(trans_from_origin);
-        vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
-        scale_matrix(scale);
-        draw_gl_cube(colours[2], simple_color_program);
-        pop_matrix();
-        rotate_matrix(rot_axis, rot_angle);
-    }
-
-    rot_axis.vec.x = 1; rot_axis.vec.y = 0;
-    trans_from_origin.x = 0; trans_from_origin.z = 3.0f;
-    for (uint i = 0; i < segments; i++)
-    {
-        push_matrix();
-        translate_matrix(trans_from_origin);
-        vec3f scale = { .x = 0.3f, .y = 0.3f, .z = 0.3f };
-        scale_matrix(scale);
-        draw_gl_cube(colours[4], simple_color_program);
-        pop_matrix();
-        rotate_matrix(rot_axis, rot_angle);
-    }
-    pop_matrix();
-}
-
-void draw_bouncing_cube_scene()
-{
-    float colours[] =
-        {
-            0,   0,   0,  // Black
-            0,   0,   1,  // Blue
-            0,   1,   0,  // Green
-            0,   1,   1,  // Cyan
-            1,   0,   0,  // Red
-            1,   0,   1,  // Magenta
-            1,   1,   0,  // Yellow
-            1,   1,   1   // White
-        };
-    // Dynamic values for a cool animation
-    static float scale_fact = 0.5f;
-    static float scale_delta = -0.0025f;
-    scale_fact += scale_delta;
-    if (scale_fact < 0.25f || scale_fact > 0.75f)
-        scale_delta = -scale_delta;
-
-    static float x_pos = 0.0f;
-    static float x_pos_delta = -0.0005f;
-    static float y_pos = 0.0f;
-    static float y_pos_delta = -0.0005f;
-    static float z_pos = 0.75f;
-    static float z_pos_delta = -0.0005f;
-
-    // x_pos += x_pos_delta;
-    if (x_pos < -0.25f || x_pos > 0.25f)
-        x_pos_delta = -x_pos_delta;
-    // y_pos += y_pos_delta;
-
-    if (y_pos < -0.25f || y_pos > 0.25f)
-        y_pos_delta = -y_pos_delta;
-
-    z_pos += z_pos_delta;
-    if (z_pos < 0.5f || z_pos > 1.0f)
-        z_pos_delta = -z_pos_delta;
-
-    static float rot_fact = 0.75f;
-    static float rot_delta = -0.025f;
-    rot_fact += rot_delta;
-    if (rot_fact > M_PI * 2)
-        rot_fact = 0;
-
-    set_mat(MODEL);
-    /* Pushing the matrix makes a copy of the current matrix and stacks it over. The matrix on top will be the
-       one to be used */
-    push_matrix();
-    vec3f scale = { .x = scale_fact, .y = scale_fact, .z = scale_fact };
-    scale_matrix(scale);
-    vec3f translation = { .x = x_pos, .y = y_pos, .z = z_pos };
-    translate_matrix(translation);
-    axis3f_t rot_axis =
-        {
-            .vec = { .x = 1.0f, .y = 0.75f, .z = 1.0f },
-            .pnt = { .x = 0, .y = 0, .z = 0 }
-        };
-    rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube(colours, simple_color_program);
-
-    // Stacking another matrix (copies the previous transformations)
-    push_matrix();
-    scale_matrix(scale);
-    translation.x = 0; translation.y = 2; translation.z = 0;
-    translate_matrix(translation);
-    rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube(colours, simple_color_program);
-    // Popping the matrix removes the top matrix from the stack
-    pop_matrix();
-    // The last few transformations on the MODEL matrix have been "undone"
-
-    // And with this, the same code generates the cube on the opposite position of the big one
-    rot_axis.vec.x = 0; rot_axis.vec.y = 0; rot_axis.vec.z = 1;
-    rotate_matrix(rot_axis, M_PI);
-
-    push_matrix();
-    scale_matrix(scale);
-    translation.x = 0; translation.y = 2; translation.z = 0;
-    translate_matrix(translation);
-    rotate_matrix(rot_axis, rot_fact);
-    draw_gl_cube(colours, simple_color_program);
-    pop_matrix();
-
-    pop_matrix();
-}
-
-void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims)
-{
-    mat4x4f mmatrix = peek(mats.model);
-    mat4x4f vmatrix = peek(mats.view);
-    mat4x4f pmatrix = peek(mats.projection);
-    uint i, j, k;
-    vec4f vs_ini[count];
-    vec4f vs_mod[count];
-    vec4f vs_vis[count];
-    vec4f vs_pro[count];
-    vec4f vs_div[count];
-    for (i = 0; i < count; i++)
-    {
-        vec4f v = zero_vec4f;
-        // In GLSL the default values of a partially declared vec4 are (X, 0, 0, 1)
-        for (j = 0; j < dims; j++)
-            v.v[j] = vertices[i * dims + j];
-        for (k = j; k < 3; k++)
-            v.v[k] = 0.0f;
-        if (dims < 4)
-            v.v[k] = 1;
-        vs_ini[i] = v;
-        v = mat4x4f_vec4f_prod(mmatrix, v);
-        vs_mod[i] = v;
-        v = mat4x4f_vec4f_prod(vmatrix, v);
-        vs_vis[i] = v;
-        v = mat4x4f_vec4f_prod(pmatrix, v);
-        vs_pro[i] = v;
-        for (j = 0; j < 4; j++)
-        {
-            v.v[j] = v.v[j] / v.w;
-        }
-        vs_div[i] = v;
-    }
-    log_debug_vec4f(vs_ini, count, "OBJECT SPACE");
-    log_debug_vec4f(vs_mod, count, "WORLD SPACE");
-    log_debug_vec4f(vs_vis, count, "CAMERA SPACE");
-    log_debug_vec4f(vs_pro, count, "SCREEN SPACE (NOT NORMALIZED)");
-    log_debug_vec4f(vs_div, count, "SCREEN SPACE (PERSPECTIVE DIVISION)");
-}
-
-void test_cube_logic(player_input_t *input, entity_t *e)
-{
-    bool right   = is_pressed(input->right);
-    bool left    = is_pressed(input->left);
-    bool forward = is_pressed(input->forward);
-    bool back    = is_pressed(input->back);
-    bool up      = is_pressed(input->up);
-    bool down    = is_pressed(input->down);
-    bool shoulder_left = is_pressed(input->shoulder_left);
-    bool shoulder_right = is_pressed(input->shoulder_right);
-    bool f1 = is_just_pressed(input->f1);
-    bool f2 = is_just_pressed(input->f2);
-    int  mouse_x = input->cursor_x_delta;
-    int  mouse_y = input->cursor_y_delta;
-    bool left_click   = is_just_pressed(input->mouse_left_click);
-    bool right_click   = is_just_pressed(input->mouse_right_click);
-    bool space = is_just_pressed(input->space);
-    float rps = M_PI / 2;
-    float angle = rps * get_delta_time();
-    float mouse_sensitivity = 1/(rps*40.0f);
-    float move_sensitivity = 1/20.0f;
-    static bool lock_roll = false;
-
-    if (mouse_x)
-    {
-        set_mat(VIEW);
-        if (lock_roll)
-        {
-            add_yaw_world_axis(mouse_sensitivity * mouse_x);
-        }
-        else
-        {
-            add_yaw(mouse_sensitivity * mouse_x);
-        }
-        //log_debug("Added roll of %f", angle);
-    }
-    if (mouse_y)
-    {
-        set_mat(VIEW);
-        add_pitch(mouse_sensitivity * mouse_y);
-        //log_debug("Added roll of %f", -angle);
-    }
-    if (forward || back || up || down || right || left)
-    {
-        set_mat(VIEW);
-        move_camera((right - left)*move_sensitivity,(up - down)*move_sensitivity,(forward - back)*move_sensitivity);
-        //log_debug("Added pitch of %f", angle);
-    }
-    if (shoulder_left || shoulder_right)
-    {
-        set_mat(VIEW);
-        add_roll((shoulder_right - shoulder_left) * angle);
-    }
-    if (right_click)
-    {
-        show_cpu_calculated_matrix = true;
-        /* Show the camera position */
-    }
-    if (left_click)
-    {
-        build_matrices();
-        set_mat(PROJECTION);
-        float ar = (float)x11_window_width / (float)x11_window_height;
-        perspective_camera(M_PI / 4, ar, 0.1f, 100.0f);
-        set_mat(VIEW);
-        vec3f eye = { .x = 0, .y = 0, .z = -1 };
-        vec3f poi = { .x = 0, .y = 0, .z = 0 };
-        look_at(eye, poi, up_vector);
-        log_debug("Reset in frame  %d", framecount);
-    }
-
-    if (space)
-    {
-        set_mat(VIEW);
-        vec3f camera_position = get_position();
-        log_debug("Camera position %f %f %f", camera_position.x, camera_position.y, camera_position.z);
-    }
-
-    if (f1)
-    {
-        set_pointer_state(input, (input->pointer_state == NORMAL ? GRABBED : NORMAL));
-    }
-    if (f2)
-    {
-        lock_roll = lock_roll == true ? false : true;
-    }
-
-    if (false) // TODO: Placeholder to please the compiler
-        log_debug("Ye [%f]", e->position.x);
-}
-
-int link_gl_functions(void)
-{
-    // TODO: Error handling
-    glUseProgram              = (PFNGLUSEPROGRAMPROC)             glXGetProcAddress((const GLubyte *)"glUseProgram");
-    glGetShaderiv             = (PFNGLGETSHADERIVPROC)            glXGetProcAddress((const GLubyte *)"glGetShaderiv");
-    glShaderSource            = (PFNGLSHADERSOURCEPROC)           glXGetProcAddress((const GLubyte *)"glShaderSource");
-    glCompileShader           = (PFNGLCOMPILESHADERPROC)          glXGetProcAddress((const GLubyte *)"glCompileShader");
-    glGetShaderInfoLog        = (PFNGLGETSHADERINFOLOGPROC)       glXGetProcAddress((const GLubyte *)"glGetShaderInfoLog");
-    glCreateShader            = (PFNGLCREATESHADERPROC)           glXGetProcAddress((const GLubyte *)"glCreateShader");
-    glCreateProgram           = (PFNGLCREATEPROGRAMPROC)          glXGetProcAddress((const GLubyte *)"glCreateProgram");
-    glDeleteShader            = (PFNGLDELETESHADERPROC)           glXGetProcAddress((const GLubyte *)"glDeleteShader");
-    glGetProgramiv            = (PFNGLGETPROGRAMIVPROC)           glXGetProcAddress((const GLubyte *)"glGetProgramiv");
-    glGetProgramInfoLog       = (PFNGLGETPROGRAMINFOLOGPROC)      glXGetProcAddress((const GLubyte *)"glGetProgramInfoLog");
-    glAttachShader            = (PFNGLATTACHSHADERPROC)           glXGetProcAddress((const GLubyte *)"glAttachShader");
-    glLinkProgram             = (PFNGLLINKPROGRAMPROC)            glXGetProcAddress((const GLubyte *)"glLinkProgram");
-    glGenVertexArrays         = (PFNGLGENVERTEXARRAYSPROC)        glXGetProcAddress((const GLubyte *)"glGenVertexArrays");
-    glGenBuffers              = (PFNGLGENBUFFERSPROC)             glXGetProcAddress((const GLubyte *)"glGenBuffers");
-    glBindVertexArray         = (PFNGLBINDVERTEXARRAYPROC)        glXGetProcAddress((const GLubyte *)"glBindVertexArray");
-    glBindBuffer              = (PFNGLBINDBUFFERPROC)             glXGetProcAddress((const GLubyte *)"glBindBuffer");
-    glBufferData              = (PFNGLBUFFERDATAPROC)             glXGetProcAddress((const GLubyte *)"glBufferData");
-    glVertexAttribPointer     = (PFNGLVERTEXATTRIBPOINTERPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribPointer");
-    glVertexAttribIPointer    = (PFNGLVERTEXATTRIBIPOINTERPROC)   glXGetProcAddress((const GLubyte *)"glVertexAttribIPointer");
-    glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)glXGetProcAddress((const GLubyte *)"glEnableVertexAttribArray");
-    glUniform3f               = (PFNGLUNIFORM3FPROC)              glXGetProcAddress((const GLubyte *)"glUniform3f");
-    glGetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)     glXGetProcAddress((const GLubyte *)"glGetUniformLocation");
-    glUniformMatrix4fv        = (PFNGLUNIFORMMATRIX4FVPROC)       glXGetProcAddress((const GLubyte *)"glUniformMatrix4fv");
-    glUniform1i               = (PFNGLUNIFORM1IPROC)              glXGetProcAddress((const GLubyte *)"glUniform1i");
-    glVertexAttribDivisor     = (PFNGLVERTEXATTRIBDIVISORPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribDivisor");
-    glDrawArraysInstanced     = (PFNGLDRAWARRAYSINSTANCEDPROC)    glXGetProcAddress((const GLubyte *)"glDrawArraysInstanced");
-    glBufferSubData           = (PFNGLBUFFERSUBDATAPROC)          glXGetProcAddress((const GLubyte *)"glBufferSubData");
-
-    return 1;
-}
-
-/* Sets the pointer state, which at the moment could be either NORMAL or GRABBED.
-   Returns 1 on success, 0 on failure */
-int set_pointer_state(player_input_t *input, pointer_state_t new_state)
-{
-    if (input->pointer_state == new_state)
-        return 1;
-
-    /* Grab the pointer */
-    if (new_state == GRABBED && input->pointer_state == NORMAL)
-    {
-        int ret = XGrabPointer(x11_display,
-                               x11_window,
-                               true,
-                               0, // TODO: Figure out what this value does
-                               GrabModeAsync,
-                               GrabModeAsync,
-                               x11_window,
-                               None,
-                               CurrentTime);
-        if (ret == BadCursor)
-        {
-            log_debug("Error trying to grab mouse: BadCursor");
-            return 0;
-        }
-        else if (ret == BadValue)
-        {
-            log_debug("Error trying to grab mouse: BadValue");
-            return 0;
-        }
-        else if (ret == BadWindow)
-        {
-            log_debug("Error trying to grab mouse: BadWindow");
-            return 0;
-        }
-        else
-        {
-            XFixesHideCursor(x11_display, x11_window);
-            input->pointer_state = new_state;
-
-            /* Don't move the in-game pointer from the center of the screen */
-            input->cursor_x = (int)(x11_window_width/2);
-            input->cursor_y = (int)(x11_window_height/2);
-
-            if (XWarpPointer(x11_display, None, x11_window, 0, 0, 0, 0, x11_window_width/2, x11_window_height/2) == BadWindow)
-            {
-                log_debug("Error trying to move pointer to center of window: BadWindow");
-            }
-
-            /* Flush the event queue */
-            XSync(x11_display, True);
-            return 1;
-        }
-    }
-    /* Ungrab the pointer */
-    if (new_state == NORMAL && input->pointer_state == GRABBED)
-    {
-        XUngrabPointer(x11_display, CurrentTime);
-        XFixesShowCursor(x11_display, x11_window);
-        input->pointer_state = new_state;
-        return 1;
-    }
-
-    return 0;
+    state->simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
 }
 
 /* Sets the VSync to either false or true.
@@ -1361,20 +843,4 @@ int set_vsync(bool new_state)
         return 1;
     }
     return 0; /* If we get here it's mostly an error */
-}
-
-void draw_fps_counter()
-{
-    static char str[32] = "0 FPS (0 ms)";
-    static double total = 0.0;
-    const int freq = 30;
-    total += dt;
-    /* Only recalculate every few frames to avoid excessive flickering */
-    if (framecount && !(framecount % freq))
-    {
-        sprintf(str, "%.2f FPS (%.2f ms)", (1.0*freq/total), total*1000.0/freq);
-        total = 0.0;
-    }
-    vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
-    render_text(str, 5.0f, x11_window_height - 20.0f, 0.5f, font_color);
 }

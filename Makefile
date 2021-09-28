@@ -1,11 +1,17 @@
 CFLAGS=-Wall -Wextra -Werror -g
-LIBS=-lX11 -lGL -lm -lXfixes -lfreetype
+LIBS=-lX11 -lGL -lm -lXfixes -lfreetype -ldl
 INCLUDES=`pkg-config --cflags freetype2`
 CC=gcc
 TAGS_FLAVOR ?= etags
 SOURCE=source
+COMMON_SOURCES=$(SOURCE)/shinage_common.h $(SOURCE)/shinage_debug.h $(SOURCE)/shinage_math.h $(SOURCE)/shinage_matrix_stack_ops.h $(SOURCE)/shinage_input.h $(SOURCE)/shinage_opengl_signatures.h $(SOURCE)/shinage_shaders.h $(SOURCE)/shinage_scene.h $(SOURCE)/shinage_utils.h
+PLATFORM_SOURCES=$(SOURCE)/x11_shinage.c $(SOURCE)/x11_shinage.h $(COMMON_SOURCES)
+GAME_SOURCES=$(SOURCE)/shinage_game.c $(COMMON_SOURCES)
 
-shinage: $(SOURCE)/x11_shinage.c $(SOURCE)/x11_shinage.h $(SOURCE)/shinage_math.h $(SOURCE)/shinage_camera.h $(SOURCE)/shinage_input.h $(SOURCE)/shinage_shaders.h $(SOURCE)/shinage_opengl_signatures.h $(SOURCE)/shinage_utils.h $(SOURCE)/x11_shinage_text.h
+shinage_game.so: $(GAME_SOURCES)
+	$(CC) $(CFLAGS) -fPIC -shared $(INCLUDES) $(SOURCE)/shinage_game.c $(LIBS) -o shinage_game.so
+
+shinage: $(PLATFORM_SOURCES)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCE)/x11_shinage.c $(LIBS) -o shinage
 
 tests: $(SOURCE)/tests.c $(SOURCE)/shinage_math.h $(SOURCE)/shinage_camera.h $(SOURCE)/shinage_stack_structures.h

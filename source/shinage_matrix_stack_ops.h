@@ -7,6 +7,10 @@
 #include "shinage_debug.h"
 #include "shinage_stack_structures.h"
 
+// Convenience global that we update each frame to point to the current game_state->active_mat
+// TODO: Maybe find a less hacky way to do this?
+extern matrix_stack_t *active_mat;
+
 /*
  *   Sets the target for the camera.
  *   NOTE: The up vector is the subjective vertical. Rotation around the w vector. It has to be perpendicular to the look vector
@@ -54,7 +58,7 @@ mat4x4f get_perspective_camera_mat4x4f(float fov_y, float ar, float n, float f)
  */
 mat4x4f get_translated_matrix_mat4x4f(mat4x4f mat, vec3f desp)
 {
-    
+
     //log_debug_matx4f(&aux, "MODEL BEFORE TRANSLATION:");
     mat4x4f translate_matrix = {
         .a1 = 1.0f,  .b1 = 0.0f,  .c1 = 0.0f,   .d1 =  desp.x,
@@ -190,7 +194,7 @@ static inline vec3f get_position_mat4x4f(mat4x4f mat)
 mat4x4f get_added_pitch_mat4x4f(mat4x4f mat, float angle)
 {
     vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
-  
+
     mat4x4f rotation_matrix_around_x = {
         .a1 = 1.0f,        .b1 = 0.0f,        .c1 = 0.0f,        .d1 =  0.0f,
         .a2 = 0.0f,        .b2 = cos(angle),  .c2 = -sin(angle), .d2 =  0.0f,
@@ -271,7 +275,7 @@ mat4x4f get_added_yaw_mat4x4f(mat4x4f mat, float angle)
 mat4x4f get_added_roll_mat4x4f(mat4x4f mat, float angle)
 {
     vec3f camera_pos = get_position_inverted_space_mat4x4f(mat);
- 
+
     mat4x4f rotation_matrix_around_z = {
         .a1 = cos(angle),  .b1 = -sin(angle),  .c1 = 0.0f,  .d1 =  0.0f,
         .a2 = sin(angle),  .b2 = cos(angle) ,  .c2 = 0.0f,  .d2 =  0.0f,
@@ -315,35 +319,17 @@ typedef struct
     matrix_stack_t *projection;
 } gl_matrices_t;
 
-gl_matrices_t mats;
-matrix_stack_t *active_mat;
+extern matrix_stack_t *active_mat;
+extern gl_matrices_t *mats;
 
-void build_matrices()
+void build_matrices(void)
 {
-    mats.model = build_stack(10);
-    push(mats.model, identity_matrix_4x4);
-    mats.view = build_stack(10);
-    push(mats.view, identity_matrix_4x4);
-    mats.projection = build_stack(10);
-    push(mats.projection, identity_matrix_4x4);
-}
-
-void set_mat(matrix_t mat)
-{
-    switch (mat)
-    {
-    case MODEL:
-        active_mat = mats.model;
-        break;
-    case VIEW:
-        active_mat = mats.view;
-        break;
-    case PROJECTION:
-        active_mat = mats.projection;
-        break;
-    default:
-        break;
-    }
+    mats->model = build_stack(10);
+    push(mats->model, identity_matrix_4x4);
+    mats->view = build_stack(10);
+    push(mats->view, identity_matrix_4x4);
+    mats->projection = build_stack(10);
+    push(mats->projection, identity_matrix_4x4);
 }
 
 mat4x4f get_added_yaw_world_axis_mat4x4f(mat4x4f mat, float angle)
