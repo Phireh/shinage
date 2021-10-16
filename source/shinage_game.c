@@ -409,11 +409,12 @@ void test_cube_logic(game_state_t *g, entity_t *e)
     bool space = is_just_pressed(input->space);
     float rps = M_PI / 2;
     float angle = rps * get_delta_time(global_clock);
-    float mouse_sensitivity = 1/(rps*40.0f);
-    float move_sensitivity = 1/20.0f;
+    float mouse_sensitivity = 100/(rps*40.0f);
+    float move_sensitivity = 100/20.0f;
+    float roll_sensitivity = 30.0f;
     static bool lock_roll = false;
 
-    log_debug("DT %f", dt);
+    //log_debug("DT %f", dt);
 
     if (mouse_x)
     {
@@ -443,7 +444,7 @@ void test_cube_logic(game_state_t *g, entity_t *e)
     if (shoulder_left || shoulder_right)
     {
         set_mat(VIEW, g);
-        add_roll((shoulder_right - shoulder_left) * angle * dt);
+        add_roll((shoulder_right - shoulder_left) * angle * roll_sensitivity * dt);
     }
     if (right_click)
     {

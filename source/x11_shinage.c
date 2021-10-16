@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
     game_state.loop_state = RUNNING;
     game_state.window_width = x11_window_width;
     game_state.window_height = x11_window_height;
-    game_state.vsync = true;
+    game_state.vsync = false;
     game_state.curr_frame_input = curr_frame_input;
     game_state.last_frame_input = last_frame_input;
 
@@ -250,21 +250,22 @@ int main(int argc, char *argv[])
     game_state.loop_state = RUNNING;
     while (game_state.loop_state == RUNNING)
     {
+        /* Update timing info */
+        /* TODO: Include controls for upping the framerate target so we can test time-independence of logic code */
+
+        last_frame_start_time = curr_frame_start_time;
+        curr_frame_start_time = get_current_time();
+        dt = curr_frame_start_time - last_frame_start_time;
+        // Pack dt into the game_state struct to the game layer can see it
+        game_state.dt = dt;
+
+        //log_debug("Delta time %f , we should sleep for %f s", dt, sleep_time);
+
         /* We only need to sleep if VSync is off and the curr frame is not the first one */
         if (!game_state.vsync && game_state.framecount)
         {
-            /* TODO: Include controls for upping the framerate target so we can test time-independence of logic code */
-            last_frame_start_time = curr_frame_start_time;
-            curr_frame_start_time = get_current_time();
-            dt = curr_frame_start_time - last_frame_start_time;
-            // Pack dt into the game_state struct to the game layer can see it
-            game_state.dt = dt;
-
             real_time_last_frame = dt - sleep_time;
             sleep_time = target_s_per_frame - real_time_last_frame;
-
-            //log_debug("Delta time %f , we should sleep for %f s", dt, sleep_time);
-
 
             if (sleep_time > 0.0) /* Only try to sleep if we actually need to */
             {
