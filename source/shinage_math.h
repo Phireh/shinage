@@ -503,89 +503,12 @@ static inline mat4x4f transpose_mat4x4f(mat4x4f m)
     return res;
 }
 
-static inline mat4x4f inverse_mat4x4f(mat4x4f m, bool det_check, bool gauss)
+static inline mat4x4f inverse_mat4x4f(mat4x4f m)
 {
-    float det;
-    if (det_check || !gauss)
-        {
-            det = determinant_mat4x4f(m, 0);
-            log_debug("Det value = %f", det);
-            if (det == 0)
-                // TODO: Find a good and cheap way to aknowledge a failed matrix operation (NaN matrix?)
-                return zero_matrix_4x4;
-        }
+    float det = determinant_mat4x4f(m, 0);
 
-    if (gauss)
-        {
-            int i, j;
-            // rows x columns
-            float *aux[4] =
-                {
-                    (float*)alloca(sizeof(float) * 8),
-                    (float*)alloca(sizeof(float) * 8),
-                    (float*)alloca(sizeof(float) * 8),
-                    (float*)alloca(sizeof(float) * 8)
-                };
-            for (i = 0; i < 4; i++)
-                memset(aux[i], 0.0f, sizeof(float) * 8);
-            // Setting the aumented matrix
-            aux[0][4] = 1;
-            aux[1][5] = 1;
-            aux[2][6] = 1;
-            aux[3][7] = 1;
-            for (i = 0; i < 4; i++)
-                for (j = 0; j < 4; j++)
-                    aux[i][j] = m.rows[i].v[j];
-            /* Ordering the rows of matrix,
-               The interchanges will start from the last row */
-            for (i = 3; i > 1; i--)
-                {
-                    if (aux[i - 1][0] < aux[i][0]) {
-                        float* temp = aux[i];
-                        aux[i] = aux[i - 1];
-                        aux[i - 1] = temp;
-                    }
-                }
-
-            /* Replace a row by sum of itself and a
-               constant multiple of another row of the matrix */
-            for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 0; j < 4; j++)
-                        {
-                            if (j != i)
-                                {
-                                    float temp = aux[j][i] / aux[i][i];
-                                    for (int k = 0; k < 8; k++) {
-                                        aux[j][k] -= aux[i][k] * temp;
-                                    }
-                                }
-                        }
-                }
-            /* Multiply each row by a nonzero integer.
-               Divide row element by the diagonal element */
-            for (int i = 0; i < 4; i++) {
-                float temp = aux[i][i];
-                for (int j = 0; j < 8; j++) {
-
-                    aux[i][j] = aux[i][j] / temp;
-                }
-            }
-
-            mat4x4f res =
-                {
-                    .a1 = aux[0][4],   .b1 = aux[0][5],   .c1 = aux[0][6],   .d1 =  aux[0][7],
-                    .a2 = aux[1][4],   .b2 = aux[1][5],   .c2 = aux[1][6],   .d2 =  aux[1][7],
-                    .a3 = aux[2][4],   .b3 = aux[2][5],   .c3 = aux[2][6],   .d3 =  aux[2][7],
-                    .a4 = aux[3][4],   .b4 = aux[3][5],   .c4 = aux[3][6],   .d4 =  aux[3][7]
-                };
-            return res;
-        }
-    else
-        {
-            mat4x4f res = scalar_mat4x4f_prod(1.0f / det, transpose_mat4x4f(adjoint_mat4x4f(m, false)));
-            return res;
-        }
+    mat4x4f res = scalar_mat4x4f_prod(1.0f / det, transpose_mat4x4f(adjoint_mat4x4f(m, false)));
+    return res;
 }
 
 static inline mat4x4f get_rotation_mat4x4f(mat4x4f m)
@@ -597,7 +520,7 @@ static inline mat4x4f get_rotation_mat4x4f(mat4x4f m)
         .a3 = m.c1, .b3 = m.c2, .c3 = m.c3, .d3 = 0,
         .a4 = 0,    .b4 = 0,    .c4 = 0,    .d4 = 1
     };
-    return inverse_mat4x4f(aux, false, false);
+    return inverse_mat4x4f(aux);
 }
 
 /* Orthogonal projection matrix with an infinite clip, atm used for text */

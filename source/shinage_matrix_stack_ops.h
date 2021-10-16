@@ -167,7 +167,7 @@ mat4x4f get_rotated_matrix_mat4x4f(mat4x4f mat, axis3f_t rot_axis, float angle)
 
 static inline vec3f get_position_inverted_space_mat4x4f(mat4x4f mat)
 {
-    mat4x4f inv_mat = inverse_mat4x4f(mat, false, false);
+    mat4x4f inv_mat = inverse_mat4x4f(mat);
     vec3f pos = { .x = inv_mat.d1, .y = inv_mat.d2, .z = inv_mat.d3 };
     return pos;
 }
@@ -476,8 +476,8 @@ void move_camera(float x, float y, float z)
 
     mat4x4f mat = pop(active_mat);
     vec3f desp = { .x = x, .y = y, .z = -z };
-    mat = get_translated_matrix_mat4x4f(inverse_mat4x4f(mat, false, false), desp);
-    push(active_mat, inverse_mat4x4f(mat, false, false));
+    mat = get_translated_matrix_mat4x4f(inverse_mat4x4f(mat), desp);
+    push(active_mat, inverse_mat4x4f(mat));
 }
 
 bool push_matrix()
