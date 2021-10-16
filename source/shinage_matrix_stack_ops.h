@@ -49,13 +49,6 @@ mat4x4f get_perspective_camera_mat4x4f(float fov_y, float ar, float n, float f)
     return mat;
 }
 
-/* NOTE: In our representation the camera lookAt vector has opposite sign
-   to what we see. This means that, for camera transforms, the Z and Y coordinates
-   should be multiplied by -1.
-
-   This function is meant to be more general, so the callee is responsible
-   for remembering that. A convenience function is provided below.
- */
 mat4x4f get_translated_matrix_mat4x4f(mat4x4f mat, vec3f desp)
 {
 
@@ -473,15 +466,18 @@ void add_roll(float angle)
     push(active_mat, aux);
 }
 
+/* NOTE: In order to move the camera along its own axis, we have to apply the translation operation
+   to the inverse of the view matrix */
+
 void move_camera(float x, float y, float z)
 {
     if (!active_mat)
         return;
 
     mat4x4f mat = pop(active_mat);
-    vec3f desp = { .x = x, .y = -y, .z = -z };
-    mat = get_translated_matrix_mat4x4f(mat, desp);
-    push(active_mat, mat);
+    vec3f desp = { .x = x, .y = y, .z = -z };
+    mat = get_translated_matrix_mat4x4f(inverse_mat4x4f(mat, false, false), desp);
+    push(active_mat, inverse_mat4x4f(mat, false, false));
 }
 
 bool push_matrix()
