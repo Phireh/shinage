@@ -498,7 +498,7 @@ void draw_fps_counter(game_state_t *g)
         total = 0.0;
     }
     vec3f font_color = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
-    render_text(str, 5.0f, g->window_height - 20.0f, g->window_width, g->window_height, 0.5f, font_color);
+    render_text(g->default_charmap, str, 5.0f, g->window_height - 20.0f, g->window_width, g->window_height, 0.5f, font_color);
 }
 
 #endif

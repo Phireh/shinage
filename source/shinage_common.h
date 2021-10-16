@@ -69,6 +69,7 @@ typedef struct {
     gl_matrices_t mats;
     matrix_stack_t *active_mat;
     uint simple_color_program;
+    character_t *default_charmap;
 
     // Window info
     int window_width;

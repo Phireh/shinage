@@ -211,6 +211,7 @@ int main(int argc, char *argv[])
     game_state.loop_state = RUNNING;
     game_state.window_width = x11_window_width;
     game_state.window_height = x11_window_height;
+    game_state.default_charmap = &charmap[0];
     game_state.vsync = false;
     game_state.curr_frame_input = curr_frame_input;
     game_state.last_frame_input = last_frame_input;

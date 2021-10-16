@@ -113,7 +113,7 @@ int load_charmap(FT_Face face)
     return charcount;
 }
 
-void render_text(char *text, float x, float y, int window_width, int window_height, float scale, vec3f color)
+void render_text(character_t *charmap, char *text, float x, float y, int window_width, int window_height, float scale, vec3f color)
 {
     /* Enable blending for text rendering */
     glEnable(GL_CULL_FACE);
@@ -159,7 +159,6 @@ void render_text(char *text, float x, float y, int window_width, int window_heig
         initialized = true;
     }
     openGL.glBindVertexArray(vao);
-
 
     char c;
     char *p = text;
