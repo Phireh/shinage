@@ -50,7 +50,7 @@ mat4x4f get_perspective_camera_mat4x4f(float fov_y, float ar, float n, float f)
 }
 
 /* NOTE: In our representation the camera lookAt vector has opposite sign
-   to what we see. This means that, for camera transforms, the Z coordinate
+   to what we see. This means that, for camera transforms, the Z and Y coordinates
    should be multiplied by -1.
 
    This function is meant to be more general, so the callee is responsible
@@ -479,7 +479,7 @@ void move_camera(float x, float y, float z)
         return;
 
     mat4x4f mat = pop(active_mat);
-    vec3f desp = { .x = x, .y = y, .z = -z };
+    vec3f desp = { .x = x, .y = -y, .z = -z };
     mat = get_translated_matrix_mat4x4f(mat, desp);
     push(active_mat, mat);
 }
