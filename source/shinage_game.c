@@ -413,35 +413,37 @@ void test_cube_logic(game_state_t *g, entity_t *e)
     float move_sensitivity = 1/20.0f;
     static bool lock_roll = false;
 
+    log_debug("DT %f", dt);
+
     if (mouse_x)
     {
         set_mat(VIEW, g);
         if (lock_roll)
         {
-            add_yaw_world_axis(mouse_sensitivity * mouse_x);
+            add_yaw_world_axis(mouse_sensitivity * mouse_x * dt);
         }
         else
         {
-            add_yaw(mouse_sensitivity * mouse_x);
+            add_yaw(mouse_sensitivity * mouse_x * dt);
         }
         //log_debug("Added roll of %f", angle);
     }
     if (mouse_y)
     {
         set_mat(VIEW, g);
-        add_pitch(mouse_sensitivity * mouse_y);
+        add_pitch(mouse_sensitivity * mouse_y * dt);
         //log_debug("Added roll of %f", -angle);
     }
     if (forward || back || up || down || right || left)
     {
         set_mat(VIEW, g);
-        move_camera((right - left)*move_sensitivity,(up - down)*move_sensitivity,(forward - back)*move_sensitivity);
+        move_camera((right - left)*move_sensitivity*dt,(up - down)*move_sensitivity*dt,(forward - back)*move_sensitivity*dt);
         //log_debug("Added pitch of %f", angle);
     }
     if (shoulder_left || shoulder_right)
     {
         set_mat(VIEW, g);
-        add_roll((shoulder_right - shoulder_left) * angle);
+        add_roll((shoulder_right - shoulder_left) * angle * dt);
     }
     if (right_click)
     {
@@ -475,7 +477,7 @@ void test_cube_logic(game_state_t *g, entity_t *e)
     }
     if (f2)
     {
-        lock_roll = lock_roll == true ? false : true;
+        lock_roll = !lock_roll;
     }
 
     if (false) // TODO: Placeholder to please the compiler

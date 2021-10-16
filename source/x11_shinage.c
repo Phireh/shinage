@@ -257,6 +257,8 @@ int main(int argc, char *argv[])
             last_frame_start_time = curr_frame_start_time;
             curr_frame_start_time = get_current_time();
             dt = curr_frame_start_time - last_frame_start_time;
+            // Pack dt into the game_state struct to the game layer can see it
+            game_state.dt = dt;
 
             real_time_last_frame = dt - sleep_time;
             sleep_time = target_s_per_frame - real_time_last_frame;

@@ -98,6 +98,7 @@ typedef struct {
 matrix_stack_t *active_mat = NULL;
 gl_matrices_t *mats = NULL;
 double *global_clock = NULL;
+double dt = 0;
 
 /* Misc. inline functions */
 
@@ -106,6 +107,7 @@ static inline void update_global_vars(game_state_t *g)
     active_mat = g->active_mat;
     mats = &g->mats;
     global_clock = &g->game_clock;
+    dt = g->dt;
 }
 
 static inline void move_entity(entity_t *e, float x_offset, float y_offset, float z_offset)
