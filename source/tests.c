@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "shinage_common.h"
 #include "shinage_debug.h"
 #include "shinage_math.h"
 #include "shinage_stack_structures.h"
@@ -64,6 +65,8 @@ int vec3_eq(vec3f v1, vec3f v2)
 
 int main()
 {
+
+
     int fail_count = 0;
     int ok_count = 0;
 
@@ -238,16 +241,6 @@ int main()
     /* Expected result of inverse matrix */
     mat4x4f m1_t11 = { .a1 = 1, .b2 = 0.5f, .c3 = (1.0f/3.0f), .d4 = 0.25f };
 
-    if (mat4_eq_debug(inverse_mat4x4f(m1_t10, 0, 1), m1_t11))
-    {
-        ++ok_count;
-        log_ok("Matrix inverse Gauss 1/3");
-    }
-    else
-    {
-        ++fail_count;
-        log_fail("Matrix inverse Gauss 1/3");
-    }
 
     mat4x4f m2_t11 = {
         .a1 = -1, .b1 = 0, .c1 = 0,  .d1 = 0,
@@ -264,44 +257,7 @@ int main()
         .a4 = 0,  .b4 = 0, .c4 = 0,  .d4 = 1
     };
 
-    if (mat4_eq_debug(inverse_mat4x4f(m2_t11, 0, 1), m3_t11))
-    {
-        ++ok_count;
-        log_ok("Matrix inverse Gauss 2/3");
-    }
-    else
-    {
-        ++fail_count;
-        log_fail("Matrix inverse Gauss 2/3");
-    }
-
-    mat4x4f m4_t11 = {
-        .a1 = -1,
-        .b2 = 0.707f, .c2 =  0.707f,
-        .b3 = 0.707f, .c3 = -0.707f, .d3 = -4.243f,
-        .d4 = 1
-    };
-
-    /* Expected result */
-    mat4x4f m5_t11 = {
-        .a1 = -1,
-        .b2 = (500.0f/707.0f), .c2 =  (500.0f/707.0f), .d2 =  (4243.0f/1414.0f),
-        .b3 = (500.0f/707.0f), .c3 = -(500.0f/707.0f), .d3 = -(4243.0f/1414.0f),
-        .d4 = 1
-    };
-
-    if (mat4_eq_debug(inverse_mat4x4f(m4_t11, 0, 1), m5_t11))
-    {
-        ++ok_count;
-        log_ok("Matrix inverse Gauss 3/3");
-    }
-    else
-    {
-        ++fail_count;
-        log_fail("Matrix inverse Gauss 3/3");
-    }
-
-    if (mat4_eq_debug(inverse_mat4x4f(m1_t10, 0, 0), m1_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m1_t10), m1_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse non-Gauss 1/2");
@@ -312,7 +268,7 @@ int main()
         log_fail("Matrix inverse non-Gauss 1/2");
     }
 
-    if (mat4_eq_debug(inverse_mat4x4f(m2_t11, 0, 0), m3_t11))
+    if (mat4_eq_debug(inverse_mat4x4f(m2_t11), m3_t11))
     {
         ++ok_count;
         log_ok("Matrix inverse non-Gauss 2/2");
@@ -331,8 +287,11 @@ int main()
         .d4 = 1
     };
 
+
+    game_state_t g = {};
+    update_global_vars(&g);
     build_matrices();
-    set_mat(VIEW);
+    set_mat(VIEW, &g);
 
 
     vec3f camera_pos = { .x = 0, .y = 0, .z = 1 };
@@ -340,7 +299,7 @@ int main()
     vec3f up = { .x = 0, .y = 1, .z = 0 };
     look_at(camera_pos, target, up);
 
-    mat4x4f m2_t12 = peek(mats.view);
+    mat4x4f m2_t12 = peek(mats->view);
 
     if (mat4_eq_debug(m2_t12, m1_t12))
     {

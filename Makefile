@@ -17,7 +17,7 @@ shinage_game.so: $(GAME_SOURCES)
 	$(CC) $(CFLAGS) -fPIC -shared $(INCLUDES) $(SOURCE)/shinage_game.c $(LIBS) -o shinage_game.so
 
 tests: $(SOURCE)/tests.c $(SOURCE)/shinage_math.h $(SOURCE)/shinage_camera.h $(SOURCE)/shinage_stack_structures.h
-	$(CC) $(CFLAGS) $(SOURCE)/tests.c $(LIBS) -o tests
+	$(CC) $(CFLAGS) $(SOURCE)/tests.c $(INCLUDES) $(LIBS) -o tests
 
 .PHONY: tags gtags
 
