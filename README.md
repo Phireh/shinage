@@ -38,7 +38,7 @@
 - Physics
 - Texture support
 - GUI
-- Dynamic code reloading
+- ✅ Dynamic code reloading
 - Sound
 - Windows platform layer
 - Input remapping
