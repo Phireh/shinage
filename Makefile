@@ -1,6 +1,7 @@
 CFLAGS=-Wall -Wextra -Werror -g
 LIBS=-lX11 -lGL -lm -lXfixes -lfreetype -ldl
-INCLUDES=`pkg-config --cflags freetype2`
+INCLUDES=-I./include
+INCLUDES+=`pkg-config --cflags freetype2`
 CC=gcc
 TAGS_FLAVOR ?= etags
 SOURCE=source
