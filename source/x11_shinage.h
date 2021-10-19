@@ -144,14 +144,14 @@ int load_game_code(game_code_t *game_code)
     void *address = dlsym(library_handle, "game_update");
     if (!address)
     {
-        fprintf(stderr, "Error loading game code: %s\n", dlerror());
+        log_err("Error loading game code: %s\n", dlerror());
         return 0;
     }
     game_code->game_update = address;
     address = dlsym(library_handle, "game_render");
     if (!address)
     {
-        fprintf(stderr, "Error loading game code: %s\n", dlerror());
+        log_err("Error loading game code: %s\n", dlerror());
         return 0;
     }
     game_code->game_render = address;
@@ -160,11 +160,8 @@ int load_game_code(game_code_t *game_code)
 }
 
 /* Reloads the dynamic part of game code if shinage_game.so was edited */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 int reload_game_code(game_code_t *game_code)
 {
-#pragma GCC diagnostic pop
     ssize_t ret;
     while ((ret = read(inotify_fd, inotify_buffer, sizeof(inotify_buffer))) != -1)
     {

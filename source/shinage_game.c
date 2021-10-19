@@ -8,7 +8,7 @@ void draw_gl_cube(float *colours, unsigned int program);
 void draw_static_cubes_scene(game_state_t *g, uint segments);
 void draw_bouncing_cube_scene(game_state_t *g);
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);
-void test_cube_logic(game_state_t *g, entity_t *e);
+void test_cube_logic(game_state_t *g);
 void update_global_vars(game_state_t *g);
 void draw_fps_counter(game_state_t *g);
 
@@ -16,8 +16,7 @@ void draw_fps_counter(game_state_t *g);
 GAME_UPDATE(game_update)
 {
     update_global_vars(g);
-    // left it here
-    test_cube_logic(g, &g->test_pyramid);
+    test_cube_logic(g);
 }
 
 GAME_RENDER(game_render)
@@ -388,7 +387,7 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
     log_debug_vec4f(vs_div, count, "SCREEN SPACE (PERSPECTIVE DIVISION)");
 }
 
-void test_cube_logic(game_state_t *g, entity_t *e)
+void test_cube_logic(game_state_t *g)
 {
     player_input_t *input = &g->curr_frame_input[PLAYER_1];
 
@@ -481,8 +480,6 @@ void test_cube_logic(game_state_t *g, entity_t *e)
         lock_roll = !lock_roll;
     }
 
-    if (false) // TODO: Placeholder to please the compiler
-        log_debug("Ye [%f]", e->position.x);
 }
 
 void draw_fps_counter(game_state_t *g)

@@ -220,6 +220,7 @@ int main(int argc, char *argv[])
     // Shaders init
     build_programs(&game_state);
 
+    /* Camera initialization */
     update_global_vars(&game_state);
     build_matrices();
     set_mat(PROJECTION, &game_state);
@@ -692,7 +693,6 @@ int main(int argc, char *argv[])
         player1_input->shift = shift_key_is_set();
 
         /* Logic */
-        //test_cube_logic(player1_input, &test_pyramid);
         game_code.game_update(&game_state);
 
         /* Check for pointer grabbing changes */
@@ -704,17 +704,11 @@ int main(int argc, char *argv[])
         /* Rendering */
 
         // NOTE: This is just for testing that OpenGL actually works
+        /* TODO: Maybe color clear should be moved to game layer? */
         glClearColor(1.0f, 0.6f, 1.0f, 1.0f);
         glEnable(GL_DEPTH_TEST);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-
-        //draw_bouncing_cube_scene();
-        //draw_static_cubes_scene(8);
-
-        //draw_fps_counter();
 
         game_code.game_render(&game_state);
 
@@ -814,7 +808,7 @@ int set_vsync(bool new_state)
         {
             GLXDrawable drawable = glXGetCurrentDrawable();
             glXSwapIntervalEXT(x11_display, drawable, 0);
-            vsync = false;            return 1;
+            vsync = false;
         }
         if (!glXSwapIntervalMESA && !glXSwapIntervalSGI && !glXSwapIntervalEXT)
         {
