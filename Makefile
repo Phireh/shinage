@@ -5,7 +5,7 @@ INCLUDES+=`pkg-config --cflags freetype2`
 CC=gcc
 TAGS_FLAVOR ?= etags
 SOURCE=source
-COMMON_SOURCES=$(SOURCE)/shinage_common.h $(SOURCE)/shinage_debug.h $(SOURCE)/shinage_math.h $(SOURCE)/shinage_matrix_stack_ops.h $(SOURCE)/shinage_input.h $(SOURCE)/shinage_opengl_signatures.h $(SOURCE)/shinage_shaders.h $(SOURCE)/shinage_scene.h $(SOURCE)/shinage_utils.h
+COMMON_SOURCES=$(SOURCE)/shinage_common.h $(SOURCE)/shinage_debug.h $(SOURCE)/shinage_math.h $(SOURCE)/shinage_matrix_stack_ops.h $(SOURCE)/shinage_input.h $(SOURCE)/shinage_opengl_signatures.h $(SOURCE)/shinage_shaders.h $(SOURCE)/shinage_scene.h $(SOURCE)/shinage_utils.h $(SOURCE)/shinage_ints.h
 PLATFORM_SOURCES=$(SOURCE)/x11_shinage.c $(SOURCE)/x11_shinage.h $(COMMON_SOURCES)
 GAME_SOURCES=$(SOURCE)/shinage_game.c $(COMMON_SOURCES)
 

@@ -5,6 +5,7 @@
 #include <time.h>
 
 /* Internal includes */
+#include "shinage_ints.h"
 #include "shinage_debug.h"
 #include "shinage_math.h"
 #include "shinage_matrix_stack_ops.h"
@@ -60,6 +61,7 @@ typedef struct {
     entity_t *entities; // ideally we would use these
     entity_t test_triangle;
     entity_t test_pyramid;
+    model_t sun;
     camera_t main_camera;
 
     player_input_t *curr_frame_input;

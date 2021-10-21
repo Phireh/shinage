@@ -8,15 +8,16 @@ void draw_gl_cube(float *colours, unsigned int program);
 void draw_static_cubes_scene(game_state_t *g, uint segments);
 void draw_bouncing_cube_scene(game_state_t *g);
 void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint dims);
-void test_cube_logic(game_state_t *g);
+void basic_camera_logic(game_state_t *g);
 void update_global_vars(game_state_t *g);
 void draw_fps_counter(game_state_t *g);
+void solar_system_logic(game_state_t *g);
 
 
 GAME_UPDATE(game_update)
 {
     update_global_vars(g);
-    test_cube_logic(g);
+    basic_camera_logic(g);
 }
 
 GAME_RENDER(game_render)
@@ -387,7 +388,7 @@ void log_debug_cpu_computed_vertex_positions(float *vertices, uint count, uint d
     log_debug_vec4f(vs_div, count, "SCREEN SPACE (PERSPECTIVE DIVISION)");
 }
 
-void test_cube_logic(game_state_t *g)
+void basic_camera_logic(game_state_t *g)
 {
     player_input_t *input = &g->curr_frame_input[PLAYER_1];
 
@@ -479,6 +480,11 @@ void test_cube_logic(game_state_t *g)
     {
         lock_roll = !lock_roll;
     }
+
+}
+
+void solar_system_logic(game_state_logic *g)
+{
 
 }
 
