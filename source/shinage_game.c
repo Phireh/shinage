@@ -569,23 +569,38 @@ void draw_solar_system(game_state_t *g)
 
     openGL.glBindVertexArray(vao);
 
+
+    // Vertex info
     static unsigned int position_bo = 0;
     if (!position_bo)
         openGL.glGenBuffers(1, &position_bo);
 
     openGL.glBindBuffer(GL_ARRAY_BUFFER, position_bo);
-    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_mesh->num_vertices, sun_mesh->vertices, GL_STATIC_DRAW);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(vec3f) * sun_mesh->num_vertices, sun_mesh->vertices, GL_STATIC_DRAW);
     openGL.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     openGL.glEnableVertexAttribArray(0);
 
+
+    // Normal info
     static unsigned int normal_bo = 0;
     if (!normal_bo)
         openGL.glGenBuffers(1, &normal_bo);
 
     openGL.glBindBuffer(GL_ARRAY_BUFFER, normal_bo);
-    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_mesh->num_vertices, sun_mesh->normals , GL_STATIC_DRAW);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(vec3f) * sun_mesh->num_vertices, sun_mesh->normals, GL_STATIC_DRAW);
     openGL.glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     openGL.glEnableVertexAttribArray(1);
+
+    // Texture coord info
+    static unsigned int texcoord_bo = 0;
+    if (!normal_bo)
+        openGL.glGenBuffers(1, &texcoord_bo);
+
+    openGL.glBindBuffer(GL_ARRAY_BUFFER, texcoord_bo);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(vec2f) * sun_mesh->num_vertices, sun_mesh->tex_coords, GL_STATIC_DRAW);
+    openGL.glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    openGL.glEnableVertexAttribArray(2); // TODO: Why does this explode?
+
 
     static unsigned int element_bo = 0;
     if (!element_bo)
@@ -594,8 +609,11 @@ void draw_solar_system(game_state_t *g)
     openGL.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
     openGL.glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32) * sun_mesh->num_indices, sun_mesh->indices, GL_STATIC_DRAW);
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     glDrawElements(GL_TRIANGLES, sun_mesh->num_indices, GL_UNSIGNED_INT, (void*)0);
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void draw_fps_counter(game_state_t *g)
