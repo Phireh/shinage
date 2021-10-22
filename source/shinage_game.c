@@ -509,7 +509,7 @@ void draw_solar_system(game_state_t *g)
     /* Texture setup */
 
     // 1x1 texture for our single color
-    uint8 texels[3] = { 0xFF, 0xFF, 0xFF /* white */ };
+    uint8 texels[3] = { 0x01, 0x01, 0x01 /* orange */ };
 
     GLuint texture = 0;
     glGenTextures(1, &texture);
@@ -553,7 +553,7 @@ void draw_solar_system(game_state_t *g)
     mat4x4f mmatrix = peek(mats->model);
     mat4x4f vmatrix = peek(mats->view);
     mat4x4f pmatrix = peek(mats->projection);
-    vec3f light_pos = {0};
+    vec3f light_pos = { .x = 2.0f, .y = 2.0f, .z = 0.0f};
     vec3f light_color = { .x = 0xFF, .y = 0xFF, .z = 0xFF }; // white
 
     openGL.glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
@@ -599,7 +599,7 @@ void draw_solar_system(game_state_t *g)
     openGL.glBindBuffer(GL_ARRAY_BUFFER, texcoord_bo);
     openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * sun_mesh->num_vertices, sun_mesh->tex_coords, GL_STATIC_DRAW);
     openGL.glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    openGL.glEnableVertexAttribArray(2); // TODO: Why does this explode?
+    openGL.glEnableVertexAttribArray(2);
 
 
     static unsigned int element_bo = 0;
@@ -609,6 +609,7 @@ void draw_solar_system(game_state_t *g)
     openGL.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
     openGL.glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32) * sun_mesh->num_indices, sun_mesh->indices, GL_STATIC_DRAW);
 
+    glPointSize(10.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glDrawElements(GL_TRIANGLES, sun_mesh->num_indices, GL_UNSIGNED_INT, (void*)0);

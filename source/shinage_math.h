@@ -246,6 +246,18 @@ int vec4_eq(vec4f v1, vec4f v2)
     return res;
 }
 
+int vec3_eq(vec3f v1, vec3f v2)
+{
+    int res = 1;
+    for (int i = 0; i < 3; ++i)
+        if (fabs(v1.v[i] - v2.v[i]) > epsilon)
+        {
+            res = 0;
+        }
+
+    return res;
+}
+
 
 static inline vec4f sum4f(vec4f v1, vec4f v2)
 {

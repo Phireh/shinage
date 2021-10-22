@@ -85,9 +85,9 @@ mesh_t *sphere_mesh(float r, int nsectors, int nstacks)
     float stack_step = M_PI / nstacks;
     float sector_step = (2.0f * M_PI) / nsectors;
 
-    vec3f *vectices = malloc(sizeof(vec3f) * (nstacks+1) * (nsectors+1));
-    vec3f *normals = malloc(sizeof(vec3f) * (nstacks+1) * (nsectors+1));
-    vec2f *tex_coords = malloc(sizeof(vec2f) * (nstacks+1) * (nsectors+1));
+    vec3f *vectices = calloc(1, sizeof(vec3f) * (nstacks+1) * (nsectors+1));
+    vec3f *normals = calloc(1, sizeof(vec3f) * (nstacks+1) * (nsectors+1));
+    vec2f *tex_coords = calloc(1, sizeof(vec2f) * (nstacks+1) * (nsectors+1));
     int n = 0;
 
     /* Create sphere vectices, normals and tex coords */
@@ -117,8 +117,8 @@ mesh_t *sphere_mesh(float r, int nsectors, int nstacks)
 
             // Vertex tex coordinate
             vec2f tex_coord;
-            tex_coord.x = (float)i / nsectors;
-            tex_coord.y = (float)j / nstacks;
+            tex_coord.x = (float)j / nsectors;
+            tex_coord.y = (float)i / nstacks;
             tex_coords[n] = tex_coord;
         }
     }
@@ -130,8 +130,8 @@ mesh_t *sphere_mesh(float r, int nsectors, int nstacks)
     /* Create sphere indices */
     for (int i = 0; i < nstacks; ++i)
     {
-        int k1 = i * (nsectors +1);   // beginning of current stack
-        int k2 = (k1 * nsectors) + 1; // beginning of next stack
+        int k1 = i * (nsectors + 1);   // beginning of current stack
+        int k2 = k1 + nsectors + 1;    // beginning of next stack
 
         for (int j = 0; j < nsectors; ++j, ++k1, ++k2)
         {
@@ -161,7 +161,7 @@ mesh_t *sphere_mesh(float r, int nsectors, int nstacks)
     sphere->normals = normals;
     sphere->vertices = vectices;
     sphere->tex_coords = tex_coords;
-    sphere->num_vertices = nstacks * (nsectors+1);
+    sphere->num_vertices = (nstacks+1) * (nsectors+1);
     sphere->model_mat = identity_matrix_4x4;
     sphere->visible = true;
 
