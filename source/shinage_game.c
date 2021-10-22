@@ -576,7 +576,7 @@ void draw_solar_system(game_state_t *g)
         openGL.glGenBuffers(1, &position_bo);
 
     openGL.glBindBuffer(GL_ARRAY_BUFFER, position_bo);
-    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(vec3f) * sun_mesh->num_vertices, sun_mesh->vertices, GL_STATIC_DRAW);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * sun_mesh->num_vertices, sun_mesh->vertices, GL_STATIC_DRAW);
     openGL.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     openGL.glEnableVertexAttribArray(0);
 
@@ -587,17 +587,17 @@ void draw_solar_system(game_state_t *g)
         openGL.glGenBuffers(1, &normal_bo);
 
     openGL.glBindBuffer(GL_ARRAY_BUFFER, normal_bo);
-    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(vec3f) * sun_mesh->num_vertices, sun_mesh->normals, GL_STATIC_DRAW);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * sun_mesh->num_vertices, sun_mesh->normals, GL_STATIC_DRAW);
     openGL.glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     openGL.glEnableVertexAttribArray(1);
 
     // Texture coord info
     static unsigned int texcoord_bo = 0;
-    if (!normal_bo)
+    if (!texcoord_bo)
         openGL.glGenBuffers(1, &texcoord_bo);
 
     openGL.glBindBuffer(GL_ARRAY_BUFFER, texcoord_bo);
-    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(vec2f) * sun_mesh->num_vertices, sun_mesh->tex_coords, GL_STATIC_DRAW);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * sun_mesh->num_vertices, sun_mesh->tex_coords, GL_STATIC_DRAW);
     openGL.glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
     openGL.glEnableVertexAttribArray(2); // TODO: Why does this explode?
 
