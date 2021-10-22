@@ -6,7 +6,6 @@ in vec3 lightViewPos;
 in vec3 transformedNormal;
 
 uniform vec3 lightColor;
-uniform vec3 objectColor;
 
 out vec4 out_color;
 
@@ -18,7 +17,7 @@ void main()
 
     /* Diffuse component of Phong lighting */
     vec3 norm = normalize(transformedNormal);
-    vec3 lightDir = normalize(lightPos - fPos);
+    vec3 lightDir = normalize(lightViewPos - fPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
 

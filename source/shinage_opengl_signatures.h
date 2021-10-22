@@ -26,6 +26,7 @@ typedef struct {
     PFNGLVERTEXATTRIBPOINTERPROC     glVertexAttribPointer;
     PFNGLVERTEXATTRIBIPOINTERPROC    glVertexAttribIPointer;
     PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+    PFNGLUNIFORM1FPROC               glUniform1f;
     PFNGLUNIFORM3FPROC               glUniform3f;
     PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation;
     PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv;
@@ -33,6 +34,7 @@ typedef struct {
     PFNGLVERTEXATTRIBDIVISORPROC     glVertexAttribDivisor;
     PFNGLDRAWARRAYSINSTANCEDPROC     glDrawArraysInstanced;
     PFNGLBUFFERSUBDATAPROC           glBufferSubData;
+    PFNGLGENERATEMIPMAPPROC          glGenerateMipmap;
 } openGL_function_pointers;
 
 openGL_function_pointers openGL;
@@ -62,6 +64,7 @@ int link_gl_functions(void)
     openGL.glVertexAttribPointer     = (PFNGLVERTEXATTRIBPOINTERPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribPointer");
     openGL.glVertexAttribIPointer    = (PFNGLVERTEXATTRIBIPOINTERPROC)   glXGetProcAddress((const GLubyte *)"glVertexAttribIPointer");
     openGL.glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)glXGetProcAddress((const GLubyte *)"glEnableVertexAttribArray");
+    openGL.glUniform1f               = (PFNGLUNIFORM1FPROC)              glXGetProcAddress((const GLubyte *)"glUniform1f");
     openGL.glUniform3f               = (PFNGLUNIFORM3FPROC)              glXGetProcAddress((const GLubyte *)"glUniform3f");
     openGL.glGetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)     glXGetProcAddress((const GLubyte *)"glGetUniformLocation");
     openGL.glUniformMatrix4fv        = (PFNGLUNIFORMMATRIX4FVPROC)       glXGetProcAddress((const GLubyte *)"glUniformMatrix4fv");
@@ -69,6 +72,7 @@ int link_gl_functions(void)
     openGL.glVertexAttribDivisor     = (PFNGLVERTEXATTRIBDIVISORPROC)    glXGetProcAddress((const GLubyte *)"glVertexAttribDivisor");
     openGL.glDrawArraysInstanced     = (PFNGLDRAWARRAYSINSTANCEDPROC)    glXGetProcAddress((const GLubyte *)"glDrawArraysInstanced");
     openGL.glBufferSubData           = (PFNGLBUFFERSUBDATAPROC)          glXGetProcAddress((const GLubyte *)"glBufferSubData");
+    openGL.glGenerateMipmap          = (PFNGLGENERATEMIPMAPPROC)         glXGetProcAddress((const GLubyte *)"glGenerateMipmap");
 
     return 1;
 }

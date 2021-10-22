@@ -29,7 +29,8 @@ typedef struct {
 
 typedef struct
 {
-	uint numVertices, _max_vertices;
+	uint num_vertices, _max_vertices;
+    uint num_indices;
     vec3f *vertices;
     uint32 *indices;
     vec3f *normals;
@@ -73,7 +74,7 @@ typedef struct
 
 /* Get a UV spherical mesh of radius r.
    Adapted from http://www.songho.ca/opengl/gl_sphere.html */
-mesh_t sphere_mesh(float r, int nsectors, int nstacks)
+mesh_t *sphere_mesh(float r, int nsectors, int nstacks)
 {
     if (nsectors < 3)
         nsectors = 32;
@@ -84,13 +85,13 @@ mesh_t sphere_mesh(float r, int nsectors, int nstacks)
     float stack_step = M_PI / nstacks;
     float sector_step = (2.0f * M_PI) / nsectors;
 
-    vec3f *vectices = malloc(sizeof(vec3f) * nstacks * (nsectors+1));
-    vec3f *normals = malloc(sizeof(vec3f) * nstacks * (nsectors+1));
-    vec2f *tex_coords = malloc(sizeof(vec2f) * nstacks * (nsectors+1));
+    vec3f *vectices = malloc(sizeof(vec3f) * (nstacks+1) * (nsectors+1));
+    vec3f *normals = malloc(sizeof(vec3f) * (nstacks+1) * (nsectors+1));
+    vec2f *tex_coords = malloc(sizeof(vec2f) * (nstacks+1) * (nsectors+1));
     int n = 0;
 
     /* Create sphere vectices, normals and tex coords */
-    for (int i = 0; i < nstacks; ++i)
+    for (int i = 0; i <= nstacks; ++i)
     {
         float stack_angle = (M_PI / 2.0f) - i * stack_step;
         float xy = r * cosf(stack_angle);
@@ -122,7 +123,8 @@ mesh_t sphere_mesh(float r, int nsectors, int nstacks)
         }
     }
 
-    uint32 *indices = malloc(sizeof(uint32) * nstacks * nsectors);
+    uint32 nindices = nstacks * nsectors * 6 - nsectors * 3 * 2;
+    uint32 *indices = malloc(sizeof(uint32) * nindices);
     n = 0;
 
     /* Create sphere indices */
@@ -153,13 +155,15 @@ mesh_t sphere_mesh(float r, int nsectors, int nstacks)
         }
 
     }
-
-    mesh_t sphere = {};
-    sphere.indices = indices;
-    sphere.normals = normals;
-    sphere.vertices = vectices;
-    sphere.tex_coords = tex_coords;
-    sphere.visible = true;
+    mesh_t *sphere = (mesh_t*) calloc(1, sizeof(mesh_t));
+    sphere->indices = indices;
+    sphere->num_indices = nindices;
+    sphere->normals = normals;
+    sphere->vertices = vectices;
+    sphere->tex_coords = tex_coords;
+    sphere->num_vertices = nstacks * (nsectors+1);
+    sphere->model_mat = identity_matrix_4x4;
+    sphere->visible = true;
 
     return sphere;
 }

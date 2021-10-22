@@ -761,6 +761,7 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
 void build_programs(game_state_t *state)
 {
     state->simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
+    state->single_light_program = make_gl_program(single_light_vertex_shader_path, single_light_fragment_shader_path);
 }
 
 /* Sets the VSync to either false or true.

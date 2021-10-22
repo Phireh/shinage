@@ -58,6 +58,10 @@ GLXContext glx_context;
 /* OpenGL globals */
 char *simple_color_vertex_shader_path = "./shaders/simple_color.vert";
 char *simple_color_fragment_shader_path = "./shaders/simple_color.frag";
+
+char *single_light_vertex_shader_path = "./shaders/single_light_simple_shader.vert";
+char *single_light_fragment_shader_path = "./shaders/single_light_simple_shader.frag";
+
 unsigned int simple_color_program = 0;
 
 /* Linux related globals */

@@ -12,6 +12,7 @@ void basic_camera_logic(game_state_t *g);
 void update_global_vars(game_state_t *g);
 void draw_fps_counter(game_state_t *g);
 void solar_system_logic(game_state_t *g);
+void draw_solar_system(game_state_t *g);
 
 
 GAME_UPDATE(game_update)
@@ -29,7 +30,8 @@ GAME_RENDER(game_render)
     if (!linked)
         link_gl_functions();
 
-    draw_static_cubes_scene(g, 8);
+    //draw_static_cubes_scene(g, 8);
+    draw_solar_system(g);
     draw_fps_counter(g);
 }
 
@@ -483,8 +485,116 @@ void basic_camera_logic(game_state_t *g)
 
 }
 
-void solar_system_logic(game_state_logic *g)
+void solar_system_logic(game_state_t *g)
 {
+    // TODO
+    if (g) return;
+}
+
+void draw_solar_system(game_state_t *g)
+{
+    // Initialize the sun if needed
+    if (!g->sun.meshes)
+    {
+        g->sun.meshes = sphere_mesh(1.0f, 32, 32);
+        g->sun.num_meshes = 1;
+        g->sun.model_mat = identity_matrix_4x4;
+        g->sun.visible = true;
+    }
+    mesh_t *sun_mesh = &g->sun.meshes[0];
+
+    /* Actually draw the sun */
+    openGL.glUseProgram(g->single_light_program);
+
+    /* Texture setup */
+
+    // 1x1 texture for our single color
+    uint8 texels[3] = { 0xFF, 0xFF, 0xFF /* white */ };
+
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    /* NOTE: Do we want to use RGB or RGBA for most textures ? */
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, texels);
+    // Is this necessary?
+    openGL.glGenerateMipmap(GL_TEXTURE_2D);
+
+    /* Uniforms */
+
+    GLuint program = g->single_light_program;
+
+    static int mmatrix_uniform_pos = -1;
+    if (mmatrix_uniform_pos == -1)
+        mmatrix_uniform_pos = openGL.glGetUniformLocation(program, "modelMatrix");
+
+    static int vmatrix_uniform_pos = -1;
+    if (vmatrix_uniform_pos == -1)
+        vmatrix_uniform_pos = openGL.glGetUniformLocation(program, "viewMatrix");
+
+    static int pmatrix_uniform_pos = -1;
+    if (pmatrix_uniform_pos == -1)
+        pmatrix_uniform_pos = openGL.glGetUniformLocation(program, "projMatrix");
+
+    static int lightpos_uniform_pos = -1;
+    if (lightpos_uniform_pos == -1)
+        lightpos_uniform_pos = openGL.glGetUniformLocation(program, "lightWorldPos");
+
+    static int lightcolor_uniform_pos = -1;
+    if (lightcolor_uniform_pos == -1)
+        lightcolor_uniform_pos = openGL.glGetUniformLocation(program, "lightColor");
+
+    mat4x4f mmatrix = peek(mats->model);
+    mat4x4f vmatrix = peek(mats->view);
+    mat4x4f pmatrix = peek(mats->projection);
+    vec3f light_pos = {0};
+    vec3f light_color = { .x = 0xFF, .y = 0xFF, .z = 0xFF }; // white
+
+    openGL.glUniformMatrix4fv(mmatrix_uniform_pos, 1, GL_TRUE, mmatrix.v);
+    openGL.glUniformMatrix4fv(vmatrix_uniform_pos, 1, GL_TRUE, vmatrix.v);
+    openGL.glUniformMatrix4fv(pmatrix_uniform_pos, 1, GL_TRUE, pmatrix.v);
+    openGL.glUniform3f(lightpos_uniform_pos, light_pos.x, light_pos.y, light_pos.z);
+    openGL.glUniform3f(lightcolor_uniform_pos, light_color.x, light_color.y, light_color.z);
+
+    /* Buffers */
+    static unsigned int vao = 0;
+    if (!vao)
+        openGL.glGenVertexArrays(1, &vao);
+
+    openGL.glBindVertexArray(vao);
+
+    static unsigned int position_bo = 0;
+    if (!position_bo)
+        openGL.glGenBuffers(1, &position_bo);
+
+    openGL.glBindBuffer(GL_ARRAY_BUFFER, position_bo);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_mesh->num_vertices, sun_mesh->vertices, GL_STATIC_DRAW);
+    openGL.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    openGL.glEnableVertexAttribArray(0);
+
+    static unsigned int normal_bo = 0;
+    if (!normal_bo)
+        openGL.glGenBuffers(1, &normal_bo);
+
+    openGL.glBindBuffer(GL_ARRAY_BUFFER, normal_bo);
+    openGL.glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_mesh->num_vertices, sun_mesh->normals , GL_STATIC_DRAW);
+    openGL.glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    openGL.glEnableVertexAttribArray(1);
+
+    static unsigned int element_bo = 0;
+    if (!element_bo)
+        openGL.glGenBuffers(1, &element_bo);
+
+    openGL.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_bo);
+    openGL.glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32) * sun_mesh->num_indices, sun_mesh->indices, GL_STATIC_DRAW);
+
+    glDrawElements(GL_TRIANGLES, sun_mesh->num_indices, GL_UNSIGNED_INT, (void*)0);
 
 }
 
