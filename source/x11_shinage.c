@@ -238,7 +238,8 @@ int main(int argc, char *argv[])
     /* Register inotify watch */
     inotify_fd = inotify_init();
     fcntl(inotify_fd, F_SETFL, O_NONBLOCK);
-    inotify_wd = inotify_add_watch(inotify_fd, "./", IN_CLOSE_WRITE);
+    inotify_code_wd = inotify_add_watch(inotify_fd, "./", IN_CLOSE_WRITE);
+    inotify_shaders_wd = inotify_add_watch(inotify_fd, "./shaders/", IN_CLOSE_WRITE);
 
     /* Main loop */
     double curr_frame_start_time = get_current_time();
@@ -304,7 +305,7 @@ int main(int argc, char *argv[])
         }
 
 
-        reload_game_code(&game_code);
+        reload_game_code(&game_code, &game_state);
 
         /* NOTE: The basic input handling loop is as follows:
            We mantain 2 different structures: the last frame, and current frame inputs.
@@ -758,11 +759,6 @@ int check_for_glx_extension(char *extension, Display *display, int screen_id)
     return 0;
 }
 
-void build_programs(game_state_t *state)
-{
-    state->simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
-    state->single_light_program = make_gl_program(single_light_vertex_shader_path, single_light_fragment_shader_path);
-}
 
 /* Sets the VSync to either false or true.
    Returns 0 on error, 1 on success, and sets the "vsync" global accordingly.

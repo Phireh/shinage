@@ -67,7 +67,9 @@ unsigned int simple_color_program = 0;
 /* Linux related globals */
 char inotify_buffer[sizeof(struct inotify_event) + NAME_MAX + 1];
 int inotify_fd;
-int inotify_wd;
+
+int inotify_code_wd;     // for game code
+int inotify_shaders_wd;  // for shaders
 
 /* Convenience functions for checking current window dimentions.
    Currently only used inside shinage_text */
@@ -163,18 +165,33 @@ int load_game_code(game_code_t *game_code)
     return 1;
 }
 
-/* Reloads the dynamic part of game code if shinage_game.so was edited */
-int reload_game_code(game_code_t *game_code)
+void build_programs(game_state_t *state)
+{
+    state->simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
+    state->single_light_program = make_gl_program(single_light_vertex_shader_path, single_light_fragment_shader_path);
+}
+
+/* Reloads the dynamic part of game code if shinage_game.so was edited.
+   Reloads shaders if files inside ./shaders are edited
+ */
+int reload_game_code(game_code_t *game_code, game_state_t *state)
 {
     ssize_t ret;
     while ((ret = read(inotify_fd, inotify_buffer, sizeof(inotify_buffer))) != -1)
     {
-        log_info("File %s has changed, reloading game code", ((struct inotify_event*)inotify_buffer)->name);
+
         struct inotify_event *event = (struct inotify_event*) inotify_buffer;
-        if (event->mask & IN_CLOSE_WRITE && !strcmp(event->name, "shinage_game.so"))
+        if (event->wd == inotify_code_wd && event->mask & IN_CLOSE_WRITE && !strcmp(event->name, "shinage_game.so"))
         {
+            log_info("File %s has changed, reloading game code", event->name);
             load_game_code(game_code);
         }
+        if (event->wd == inotify_shaders_wd && event->mask & IN_CLOSE_WRITE)
+        {
+            log_info("File %s has changed, reloading shaders", event->name);
+            build_programs(state);
+        }
+
     }
     if (ret == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
     {
@@ -196,6 +213,7 @@ int reload_game_code(game_code_t *game_code)
     // Return 1 on code reload
     return ret > 0 ? 1 : 0;
 }
+
 
 /* Functions */
 int check_for_glx_extension(char *extension, Display *display, int screen_id);
