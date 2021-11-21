@@ -62,6 +62,9 @@ char *simple_color_fragment_shader_path = "./shaders/simple_color.frag";
 char *single_light_vertex_shader_path = "./shaders/single_light_simple_shader.vert";
 char *single_light_fragment_shader_path = "./shaders/single_light_simple_shader.frag";
 
+char *gui_vertex_shader_path = "./shaders/gui.vert";
+char *gui_fragment_shader_path = "./shaders/gui.frag";
+
 unsigned int simple_color_program = 0;
 
 /* Linux related globals */
@@ -169,6 +172,7 @@ void build_programs(game_state_t *state)
 {
     state->simple_color_program = make_gl_program(simple_color_vertex_shader_path, simple_color_fragment_shader_path);
     state->single_light_program = make_gl_program(single_light_vertex_shader_path, single_light_fragment_shader_path);
+    state->gui_program = make_gl_program(gui_vertex_shader_path, gui_fragment_shader_path);
 }
 
 /* Reloads the dynamic part of game code if shinage_game.so was edited.

@@ -14,6 +14,7 @@
 #include "shinage_shaders.h"
 #include "shinage_scene.h"
 #include "shinage_utils.h"
+#include "shinage_gui.h"
 
 /* shinage_text also includes ft2build.h and FT_FREETYPE_H */
 #ifdef __linux__
@@ -72,12 +73,16 @@ typedef struct {
     matrix_stack_t *active_mat;
     uint simple_color_program;
     uint single_light_program;
+    uint gui_program;
     character_t *default_charmap;
 
     // Window info
     int window_width;
     int window_height;
     bool vsync;
+
+    // GUI info
+    gui_t gui;
 
     // Timing info
     int framecount;
